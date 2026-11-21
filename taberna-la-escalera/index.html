@@ -960,17 +960,33 @@ a { color: inherit; }
   var idx = (ahora.getDay() + 6) % 7;
   var mins = ahora.getHours()*60 + ahora.getMinutes();
   function aMin(t){ var p = t.split(":"); return (+p[0])*60 + (+p[1]); }
+  // um slot pode acabar no dia seguinte (20:00-00:30): se o fecho for menor
+  // que a abertura, soma-se um dia. Sem isto, às 21h o site dizia «cerrado».
+  function limites(f){ var a = aMin(f[0]), b = aMin(f[1]); if (b <= a) b += 1440; return [a, b]; }
   var abierto = false, texto = "";
   (h[idx] || []).forEach(function(f){
-    if (mins >= aMin(f[0]) && mins <= aMin(f[1])) { abierto = true; texto = L.abierto + " " + f[1]; }
+    var l = limites(f);
+    if (mins >= l[0] && mins < l[1]) { abierto = true; texto = L.abierto + " " + f[1]; }
   });
+  // ainda dentro do slot de ontem que atravessou a meia-noite
   if (!abierto) {
+    (h[(idx + 6) % 7] || []).forEach(function(f){
+      var l = limites(f);
+      if (mins + 1440 >= l[0] && mins + 1440 < l[1]) {
+        abierto = true; texto = L.abierto + " " + f[1];
+      }
+    });
+  }
+  if (!abierto) {
+    // o próximo horário é o primeiro slot que ainda não passou — não o primeiro
+    // do dia. Às 19h, um sítio que abre às 13h e às 20h tem de dizer 20h.
     var prox = "";
-    for (var k = 0; k < 7; k++) {
+    for (var k = 0; k < 8 && !prox; k++) {
       var d = (idx + k) % 7, fs = h[d] || [];
-      if (fs.length) {
+      for (var j = 0; j < fs.length; j++) {
+        if (k === 0 && aMin(fs[j][0]) <= mins) continue;
         prox = (k === 0 ? L.hoy : k === 1 ? L.manana : L.elDia + " " + L.dias[d])
-             + " " + L.aLas + " " + fs[0][0];
+             + " " + L.aLas + " " + fs[j][0];
         break;
       }
     }
