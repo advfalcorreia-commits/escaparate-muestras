@@ -466,6 +466,30 @@ h1,h2{font-weight:700}
           </div>
         </aside>
         <div>
+          <div id="chave-google" hidden>
+            <div class="card" style="border-color:rgba(96,165,250,.35)">
+              <h3 style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#8fe3b0;margin:0 0 8px">
+                Falta la clave de Google Places</h3>
+              <p style="font-size:13.5px;color:var(--suave);margin:0 0 12px;line-height:1.55">
+                La búsqueda en tiempo real usa la Google Places API — la misma que el SitesLead.
+                Pega aquí tu clave y queda guardada <b>solo en este navegador</b>: no viaja al
+                repositorio ni a ningún servidor nuestro.</p>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <input class="mini-input" id="chave-input" placeholder="AIza…" style="flex:1;min-width:220px">
+                <button class="bt verde" id="chave-guardar">Guardar clave</button>
+              </div>
+              <details style="margin-top:12px">
+                <summary style="cursor:pointer;font-size:12.5px;color:var(--suave)">Cómo conseguirla</summary>
+                <ol style="font-size:12.5px;color:var(--suave);line-height:1.6;margin:10px 0 0;padding-left:18px">
+                  <li>Google Cloud Console → nuevo proyecto.</li>
+                  <li>Activar <b>Places API (New)</b>.</li>
+                  <li>APIs y servicios → Credenciales → Crear clave de API.</li>
+                  <li>Restringir la clave a <b>Sitios web</b> con el dominio de la demo.</li>
+                  <li>Pegarla arriba. Cuesta ~32 USD por 1000 búsquedas de 20 resultados.</li>
+                </ol>
+              </details>
+            </div>
+          </div>
           <div id="busca-vazia" class="vazio-grande">
             <div class="caixa">
               <h3>Busque leads por cidade</h3>
@@ -655,6 +679,7 @@ h1,h2{font-weight:700}
 <script src="cidades.js"></script>
 <script src="globo.js"></script>
 <script src="vivo.js"></script>
+<script src="places.js"></script>
 <script src="preview.js"></script>
 <script src="app.js"></script>
 </body>

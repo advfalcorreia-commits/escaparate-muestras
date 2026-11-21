@@ -394,7 +394,17 @@
   function buscar() {
     if (!area) { brinde("Elige primero la zona."); return; }
     if (!nicho && texto.length < 3) { brinde("Elige un nicho o escribe al menos 3 letras."); return; }
-    fecharModal();
+
+    fecharModal();                     // primeiro fecha, senão o modal fica por cima
+
+    if (!Places.temChave()) {
+      mostrar("buscar");
+      $("#chave-google").hidden = false;
+      $("#busca-vazia").hidden = true;
+      $("#busca-resultados").hidden = true;
+      return;
+    }
+    $("#chave-google").hidden = true;
     mostrar("buscar");
     $("#busca-vazia").hidden = true;
     $("#busca-resultados").hidden = false;
@@ -407,43 +417,31 @@
     gravar();
     renderCidadesLaterais();
 
-    // 1) o que já está guardado aparece de imediato
-    var alt = nicho ? dadosGuardados(area, nicho) : null;
-    var listaGuardada = alt && alt.leads && alt.leads.length
-      ? alt.leads
-      : (!nicho && texto.length >= 3 ? guardadosPorTexto(area, texto) : null);
-    if (listaGuardada && listaGuardada.length) {
-      resultados = listaGuardada;
-      renderResultados();
-      fuente("guardado");
-    } else {
-      resultados = [];
-      $("#res-cont").textContent = "";
-      $("#vivo-zona").innerHTML = "<b>" + esc(area.nombre) + "</b>";
-      $("#alvos").innerHTML = '<div class="carregando"><i></i> Consultando OpenStreetMap…</div>';
-      $("#res-rodape").textContent = "";
-      fuente("consultando");
-    }
+    resultados = [];
+    $("#res-cont").textContent = "";
+    $("#vivo-zona").innerHTML = "<b>" + esc(area.nombre) + "</b> · " +
+      esc(nicho ? ((window.NICHOS[nicho] || {}).nombre || nicho) : ("«" + texto + "»"));
+    $("#alvos").innerHTML = '<div class="carregando"><i></i> Buscando en Google…</div>';
+    $("#res-rodape").textContent = "";
 
-    // 2) consulta ao vivo; quando chega, substitui
+    var consulta = texto && texto.length >= 3
+      ? texto
+      : ((window.NICHOS[nicho] || {}).nombre || nicho);
     var meu = ++seqBusca;
-    var tags = nicho ? (window.NICHOS[nicho].osm || []) : null;
-    Vivo.negocios(area, tags, texto, function (err, lista) {
+    Places.buscar(consulta, area, function (err, lista) {
       if (meu !== seqBusca) return;
       if (err) {
-        if (!resultados.length) {
-          $("#alvos").innerHTML = '<div class="vazio">OpenStreetMap no responde ahora mismo ' +
-            '(es un servicio voluntario y está saturado). Vuelve a intentarlo en un minuto.</div>';
-          fuente("erro");
-        } else {
-          fuente("guardado", true);
-        }
+        $("#alvos").innerHTML = '<div class="vazio">Google Places respondió: <b>' +
+          esc(err.message) + "</b><br><br>Revisa la clave (y que la <i>Places API (New)</i> " +
+          "esté activada en el proyecto).</div>";
+        fuente("erro");
         return;
       }
+      lista.forEach(function (l) { if (!l.ciudad) l.ciudad = area.nombre; });
       resultados = lista;
       renderResultados();
       fuente("vivo");
-    }, 400, resultados.length === 0);
+    }, null, nicho);
   }
 
   /* indica de onde vieram os dados — é informação, não decoração */
@@ -452,13 +450,11 @@
     var base = "<b>" + esc(area ? area.nombre : "") + "</b> · " +
       esc(nicho ? ((window.NICHOS[nicho] || {}).nombre || nicho) : ("«" + texto + "»"));
     var etiqueta = "";
-    if (tipo === "vivo") etiqueta = ' <span class="pill ok">en vivo · OpenStreetMap</span>';
+    if (tipo === "vivo") etiqueta = ' <span class="pill ok">en vivo · Google Places</span>';
     else if (tipo === "guardado") {
-      etiqueta = forcar
-        ? ' <span class="pill aviso">OSM saturado · datos guardados</span>'
-        : ' <span class="pill">datos guardados</span>';
+      etiqueta = ' <span class="pill aviso">datos guardados</span>';
     } else if (tipo === "consultando") etiqueta = ' <span class="pill">consultando…</span>';
-    else etiqueta = ' <span class="pill aviso">sin conexión con OSM</span>';
+    else etiqueta = ' <span class="pill aviso">error de Google</span>';
     el.innerHTML = base + etiqueta;
   }
 
@@ -507,7 +503,10 @@
         "<div><h4>" + esc(l.nombre) + "</h4>" +
         (l.web ? '<span class="tag com">Ya tiene web</span>'
                : '<span class="tag sem">Sin web</span>') + "</div></div>" +
-      '<div class="nota">' + (l.telefono ? "☎ " + esc(l.telefono) : "sin teléfono") +
+      '<div class="nota">' +
+        (l.nota ? '<span class="estrela">★ ' + l.nota.toFixed(1) + "</span> " +
+          (l.resenas ? '<span style="opacity:.7">(' + l.resenas + ")</span> " : "") : "") +
+        (l.telefono ? "☎ " + esc(l.telefono) : "sin teléfono") +
         (l.direccion ? " · " + esc(l.direccion) : "") + "</div>" +
       '<div class="acoes">' +
         (l.web ? '<a class="mini" title="Su web" href="' + esc(l.web) +
@@ -582,6 +581,21 @@
   }
 
   $("#nova-busca").addEventListener("click", function () { abrirModal(1); });
+
+  (function () {
+    var b = $("#chave-guardar");
+    if (!b) return;
+    b.addEventListener("click", function () {
+      var v = ($("#chave-input").value || "").trim();
+      if (v.length < 20) { brinde("Esa clave parece incompleta."); return; }
+      Places.definirChave(v);
+      brinde("Clave guardada. Ya puedes buscar.");
+      $("#chave-google").hidden = true;
+      if (area && (nicho || texto.length >= 3)) buscar();
+    });
+    if (Places.temChave()) $("#chave-google").hidden = true;
+    $("#chave-input").value = Places.chave() || "";
+  })();
 
   function montarGlobo() {
     var cv = document.getElementById("globo");
