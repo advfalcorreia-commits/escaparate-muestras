@@ -27,10 +27,28 @@ window.Vivo = (function () {
 
   // (chave,valor) -> slug do nicho, a partir do catálogo
   var mapaTags = null;
+  // os genéricos primeiro, senão «restaurant» fica com «asador» e «hairdresser»
+  // com «barberia» só por ordem alfabética
+  var PRIORIDADE = ["restaurante", "bar", "cafeteria", "peluqueria", "estetica",
+    "veterinaria", "optica", "floristeria", "moda", "joyeria", "libreria",
+    "muebles", "gimnasio", "yoga", "abogado", "gestoria", "inmobiliaria",
+    "autoescuela", "academia", "agencia-viajes", "arquitecto", "fontanero",
+    "electricista", "reformas", "pintor", "cerrajero", "jardineria",
+    "climatizacion", "mudanzas", "limpieza", "carpinteria", "desatascos",
+    "albanileria", "instalaciones", "clinica-dental", "fisioterapia",
+    "psicologia", "nutricion", "podologia", "logopedia", "panaderia",
+    "pasteleria", "estetica-canina", "hotel-rural"];
+
   function construirMapa() {
     if (mapaTags) return mapaTags;
     mapaTags = {};
-    Object.keys(window.NICHOS || {}).forEach(function (slug) {
+    var ordem = {};
+    PRIORIDADE.forEach(function (n, i) { ordem[n] = i; });
+    var slugs = Object.keys(window.NICHOS || {}).sort(function (a, b) {
+      var oa = ordem[a] == null ? 999 : ordem[a], ob = ordem[b] == null ? 999 : ordem[b];
+      return oa - ob || a.localeCompare(b);
+    });
+    slugs.forEach(function (slug) {
       (window.NICHOS[slug].osm || []).forEach(function (t) {
         var i = t.indexOf("=");
         var k = t.slice(0, i), v = t.slice(i + 1);
