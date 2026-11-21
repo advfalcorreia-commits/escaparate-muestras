@@ -3,37 +3,375 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Escaparate · muestras</title>
-<meta name="robots" content="noindex">
-<style>
-:root{--tinta:#14110f;--papel:#faf7f2;--linha:#ded5c8;--acento:#8c2f39;--suave:#6b625a}
-*{box-sizing:border-box}
-body{margin:0;background:var(--papel);color:var(--tinta);
- font:400 17px/1.6 "Karla",ui-sans-serif,system-ui,sans-serif}
-.wrap{max-width:820px;margin:0 auto;padding:80px 24px 120px}
-h1{font-family:"Fraunces",Georgia,serif;font-weight:400;font-size:clamp(2rem,5vw,3rem);
- letter-spacing:-.03em;line-height:1.05;margin:0 0 14px}
-p.lead{color:var(--suave);max-width:52ch;margin:0 0 48px}
-ul{list-style:none;padding:0;margin:0}
-li{border-top:1px solid var(--linha);padding:20px 0}
-li:last-child{border-bottom:1px solid var(--linha)}
-a{color:inherit;text-decoration:none;display:flex;justify-content:space-between;
- gap:20px;align-items:baseline}
-a:hover .n{color:var(--acento)}
-.n{font-family:"Fraunces",Georgia,serif;font-size:20px;letter-spacing:-.01em;transition:.2s}
-.t{font-size:13px;color:var(--suave);white-space:nowrap}
-footer{margin-top:56px;font-size:13px;color:var(--suave);line-height:1.7}
-</style>
+<title>Escaparate — webs para negocios locales, con tu nombre en la factura</title>
+<meta name="description" content="Elige un negocio de tu ciudad y la web sale hecha, con su nombre, sus fotos y su carta. Se la enseñas al dueño y la vendes. Sin programar, sin diseñar, sin plantillas que parezcan de máquina.">
+<meta name="robots" content="index">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Escaparate — webs para negocios locales">
+<meta property="og:description" content="Elige un negocio, la web sale hecha. Se la enseñas al dueño y la vendes.">
+<meta property="og:locale" content="es_ES">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Karla:wght@400;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Karla:ital,wght@0,300..700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --papel:#faf7f2; --tinta:#14110f; --acento:#8c2f39; --acento-suave:#efe6da;
+  --linha:#ded5c8; --suave:#6b625a; --superficie:#f3eee5;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;scroll-padding-top:80px}
+body{margin:0;background:var(--papel);color:var(--tinta);
+  font-family:"Karla",ui-sans-serif,system-ui,sans-serif;font-size:17px;line-height:1.65;
+  -webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}
+a{color:inherit}
+::selection{background:var(--acento);color:var(--papel)}
+.wrap{max-width:1120px;margin:0 auto;padding:0 40px}
+@media(max-width:820px){.wrap{padding:0 22px}}
+.kicker{font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;color:var(--suave);margin:0}
+.serif{font-family:"Fraunces",Georgia,serif;font-variation-settings:"SOFT" 30,"WONK" 1}
+
+.cab{position:sticky;top:0;z-index:50;background:var(--papel);border-bottom:1px solid var(--linha)}
+.cab-in{max-width:1120px;margin:0 auto;padding:16px 40px;display:flex;align-items:center;
+  justify-content:space-between;gap:28px}
+.marca{font-family:"Fraunces",Georgia,serif;font-size:19px;font-weight:600;letter-spacing:-.015em;
+  text-decoration:none}
+.nav{display:flex;gap:24px;font-size:14px}
+.nav a{text-decoration:none;color:var(--suave);padding-bottom:3px;border-bottom:1px solid transparent;transition:.18s}
+.nav a:hover{color:var(--tinta);border-color:var(--acento)}
+@media(max-width:820px){.nav{display:none}.cab-in{padding:14px 22px}}
+
+.portada{padding:70px 0 0}
+.portada-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:end}
+@media(max-width:900px){.portada-grid{grid-template-columns:1fr;gap:36px}.portada{padding-top:40px}}
+h1{font-family:"Fraunces",Georgia,serif;font-weight:400;font-size:clamp(2.5rem,6.2vw,4.6rem);
+  line-height:.96;letter-spacing:-.035em;margin:16px 0 0;font-variation-settings:"SOFT" 30,"WONK" 1;
+  text-wrap:balance}
+h1 em{font-style:italic;color:var(--acento);font-variation-settings:"SOFT" 70,"WONK" 1}
+.entradilla{font-size:clamp(1.02rem,1.4vw,1.16rem);color:var(--suave);max-width:40ch;margin:26px 0 0}
+.acciones{display:flex;gap:14px;margin-top:32px;flex-wrap:wrap;align-items:center}
+.boton{display:inline-block;background:var(--tinta);color:var(--papel);text-decoration:none;
+  font-size:14px;font-weight:500;letter-spacing:.03em;padding:15px 26px;border:1px solid var(--tinta);transition:.2s}
+.boton:hover{background:var(--acento);border-color:var(--acento)}
+.boton.secundario{background:transparent;color:var(--tinta);border-color:var(--linha)}
+.boton.secundario:hover{background:transparent;border-color:var(--tinta);color:var(--tinta)}
+.migalha{font-size:13px;color:var(--suave);margin-top:14px}
+.migalha b{color:var(--tinta);font-weight:700}
+.muestra-marco{border:1px solid var(--linha);background:var(--superficie);padding:14px;margin:0}
+.muestra-marco img{width:100%;aspect-ratio:16/10;object-fit:cover}
+.muestra-marco figcaption{font-family:"Fraunces",Georgia,serif;font-style:italic;font-size:13px;
+  color:var(--suave);margin-top:10px;display:flex;justify-content:space-between;gap:12px}
+.muestra-marco figcaption a{text-decoration:none;border-bottom:1px solid var(--acento)}
+
+.franja{margin-top:64px;border-top:1px solid var(--linha);border-bottom:1px solid var(--linha)}
+.franja-in{display:flex;flex-wrap:wrap;max-width:1120px;margin:0 auto;padding:0 40px}
+.celda{flex:1 1 200px;padding:20px 26px;border-left:1px solid var(--linha);margin:0}
+.celda:first-child{border-left:0;padding-left:0}
+.celda dt{font-size:10px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;color:var(--suave);margin-bottom:6px}
+.celda dd{margin:0;font-size:15px}
+@media(max-width:820px){.franja-in{padding:0 22px}.celda{flex:1 1 100%;border-left:0;border-top:1px solid var(--linha);padding:15px 0}.celda:first-child{border-top:0}}
+
+section{padding:92px 0}
+@media(max-width:820px){section{padding:60px 0}}
+.cab-seccion{display:flex;align-items:baseline;gap:18px;border-top:1px solid var(--tinta);padding-top:14px;margin-bottom:44px}
+.num{font-family:"Fraunces",Georgia,serif;font-size:12px;letter-spacing:.1em;color:var(--acento);font-weight:600}
+h2{font-family:"Fraunces",Georgia,serif;font-weight:400;font-size:clamp(1.7rem,3.3vw,2.6rem);
+  letter-spacing:-.025em;line-height:1.06;margin:0;font-variation-settings:"SOFT" 30,"WONK" 1}
+.cab-seccion .nota{margin:0 0 0 auto;font-size:13px;color:var(--suave);max-width:32ch;text-align:right}
+@media(max-width:820px){.cab-seccion .nota{display:none}}
+
+.pasos{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;background:var(--linha);border:1px solid var(--linha)}
+.paso{background:var(--papel);padding:26px 24px}
+.paso .n{font-family:"Fraunces",Georgia,serif;font-size:13px;color:var(--acento);letter-spacing:.1em}
+.paso h3{font-family:"Fraunces",Georgia,serif;font-weight:500;font-size:19px;margin:10px 0 8px;letter-spacing:-.01em}
+.paso p{font-size:14.5px;color:var(--suave);margin:0;line-height:1.6}
+@media(max-width:900px){.pasos{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.pasos{grid-template-columns:1fr}}
+
+.dos{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:start}
+@media(max-width:900px){.dos{grid-template-columns:1fr;gap:36px}}
+.lista{list-style:none;padding:0;margin:0}
+.lista li{border-top:1px solid var(--linha);padding:16px 0;font-size:15.5px}
+.lista li:last-child{border-bottom:1px solid var(--linha)}
+.lista strong{display:block;font-size:16px;margin-bottom:3px}
+.lista span{color:var(--suave);font-size:14.5px;line-height:1.55;display:block}
+.lista li::before{content:"";float:left;width:14px;height:1px;background:var(--acento);margin:11px 14px 0 0}
+
+.precos{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:stretch}
+@media(max-width:900px){.precos{grid-template-columns:1fr}}
+.plano{border:1px solid var(--linha);padding:28px 26px;display:flex;flex-direction:column;background:var(--papel)}
+.plano.destaque{border-color:var(--tinta);background:var(--superficie)}
+.plano h3{font-family:"Fraunces",Georgia,serif;font-weight:500;font-size:20px;margin:0 0 4px}
+.plano .prezo{font-family:"Fraunces",Georgia,serif;font-size:clamp(2rem,3.6vw,2.8rem);letter-spacing:-.03em;margin:14px 0 2px}
+.plano .prezo small{font-size:14px;font-family:"Karla",sans-serif;letter-spacing:0;color:var(--suave)}
+.plano ul{list-style:none;padding:0;margin:20px 0 24px;font-size:14.5px;flex:1}
+.plano li{padding:7px 0;border-bottom:1px solid var(--linha);color:var(--suave)}
+.plano li:last-child{border-bottom:0}
+.plano .boton{text-align:center}
+.etiqueta-plano{display:inline-block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;
+  color:var(--acento);border:1px solid var(--acento-suave);background:var(--acento-suave);padding:3px 8px;margin-bottom:10px}
+
+.faq{max-width:820px}
+.faq details{border-bottom:1px solid var(--linha);padding:17px 0}
+.faq summary{cursor:pointer;font-size:17px;font-weight:700;list-style:none;display:flex;
+  justify-content:space-between;gap:20px;align-items:baseline}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";font-family:"Fraunces",Georgia,serif;font-size:22px;color:var(--acento);line-height:1}
+.faq details[open] summary::after{content:"–"}
+.faq p{margin:12px 0 0;color:var(--suave);font-size:15.5px;max-width:64ch}
+
+.aviso{border:1px solid var(--linha);border-left:2px solid var(--acento);padding:22px 24px;background:var(--papel)}
+.aviso p{margin:0;font-size:15px;color:var(--suave)}
+.aviso strong{color:var(--tinta)}
+
+.cierre{border-top:1px solid var(--tinta);text-align:center;padding:74px 0}
+.cierre h2{margin-bottom:26px;font-size:clamp(1.9rem,4.2vw,3rem)}
+.cierre p{color:var(--suave);max-width:52ch;margin:0 auto 28px}
+
+.pie{border-top:1px solid var(--linha);padding:42px 0 58px;font-size:13.5px;color:var(--suave)}
+.pie-in{display:flex;justify-content:space-between;gap:30px;flex-wrap:wrap}
+.pie-marca{font-family:"Fraunces",Georgia,serif;font-size:16px;color:var(--tinta);margin-bottom:6px}
+.pie a{text-decoration:none;border-bottom:1px solid transparent}
+.pie a:hover{border-color:var(--suave)}
+.salto{position:absolute;left:-9999px}
+.salto:focus{left:16px;top:12px;z-index:999;background:var(--tinta);color:var(--papel);padding:10px 16px;text-decoration:none;font-size:13px}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+</style>
 </head>
-<body><div class="wrap">
-<h1>Muestras</h1>
-<p class="lead">Sitios de demostración generados con Escaparate. Negocios, direcciones y
-textos son ficticios: sirven para enseñar el diseño, no para representar a nadie.</p>
-<ul>
-<li><a href="taberna-la-escalera/"><span class="n">Taberna La Escalera</span><span class="t">taberna-la-escalera</span></a></li>
-</ul>
-<footer>Escaparate · generador de sitios para negocios locales.<br>
-Cada muestra es un fichero HTML autónomo, sin dependencias de servidor.</footer>
-</div></body></html>
+<body>
+<a class="salto" href="#contenido">Ir al contenido</a>
+
+<header class="cab">
+  <div class="cab-in">
+    <a class="marca" href="#">Escaparate</a>
+    <nav class="nav">
+      <a href="#como">Cómo funciona</a>
+      <a href="#ejemplo">Ejemplo</a>
+      <a href="#precios">Precios</a>
+      <a href="#preguntas">Preguntas</a>
+    </nav>
+    <a class="boton" href="#precios" style="padding:11px 20px">Empezar</a>
+  </div>
+</header>
+
+<main id="contenido">
+
+<section class="portada">
+  <div class="wrap portada-grid">
+    <div>
+      <p class="kicker">Para quien quiere vender webs sin programar</p>
+      <h1>Webs que no parecen<br><em>hechas por una máquina</em>.</h1>
+      <p class="entradilla">Elige un negocio de tu ciudad. La web sale con su nombre, sus
+        fotos y su carta. Se la enseñas al dueño y la vendes. Tú pones el trato, nosotros el trabajo.</p>
+      <div class="acciones">
+        <a class="boton" href="#precios">Empezar — desde 39 €/mes</a>
+        <a class="boton secundario" href="#ejemplo">Ver una web de ejemplo</a>
+      </div>
+      <p class="migalha">Sin permanencia · <b>cancela cuando quieras</b> · la web es del cliente</p>
+    </div>
+    <figure class="muestra-marco">
+      <img src="muestra.jpg" alt="Captura de una web de ejemplo para una taberna de Madrid">
+      <figcaption><span>Taberna La Escalera · Madrid</span><a href="#ejemplo">Verla entera →</a></figcaption>
+    </figure>
+  </div>
+</section>
+
+<div class="franja">
+  <div class="franja-in">
+    <dl class="celda"><dt>Sectores</dt><dd>54, cada uno con su paleta</dd></dl>
+    <dl class="celda"><dt>Diseños</dt><dd>3 estructuras hechas a mano</dd></dl>
+    <dl class="celda"><dt>Idiomas</dt><dd>Castellano, catalán, gallego, inglés</dd></dl>
+    <dl class="celda"><dt>Entrega</dt><dd>1 archivo, sin servidor</dd></dl>
+  </div>
+</div>
+
+<section id="como">
+  <div class="wrap">
+    <div class="cab-seccion">
+      <span class="num">01</span>
+      <h2>Cómo funciona</h2>
+      <p class="nota">Todo el trabajo pesado lo hace la herramienta. Lo que no puede hacer es hablar con el dueño: eso es tuyo.</p>
+    </div>
+    <div class="pasos">
+      <div class="paso"><div class="n">01</div><h3>Elige ciudad y sector</h3>
+        <p>«Madrid, peluquerías». Te devuelve los negocios con su dirección y teléfono, y marca cuáles no tienen web. Esos son tus clientes.</p></div>
+      <div class="paso"><div class="n">02</div><h3>La web sale hecha</h3>
+        <p>Con su nombre, su horario, su mapa y sus fotos ya tratadas. No hay que diseñar nada ni inventar un menú de ejemplo.</p></div>
+      <div class="paso"><div class="n">03</div><h3>Se la enseñas</h3>
+        <p>Por teléfono o en persona, con un enlace privado que solo ve él. Enseñar la web de su propio negocio hace el 80 % del trabajo.</p></div>
+      <div class="paso"><div class="n">04</div><h3>Cobras y entregas</h3>
+        <p>El dominio va a su nombre y el archivo es suyo. Tú facturas la web con tu precio, que pones tú.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="porque" style="padding-top:0">
+  <div class="wrap">
+    <div class="cab-seccion">
+      <span class="num">02</span>
+      <h2>Por qué no parecen plantillas</h2>
+      <p class="nota">Es la única razón por la que alguien paga 400 € por una web hoy.</p>
+    </div>
+    <div class="dos">
+      <div>
+        <p style="font-size:19.5px;line-height:1.6;margin:0 0 20px">Un generador normal coge una plantilla y le mete los datos. Se nota a
+          diez metros: el degradado, las tres tarjetas iguales, el texto que podría
+          ser de cualquier negocio.</p>
+        <p style="color:var(--suave);margin:0">Aquí hay tres estructuras de diseño hechas a mano — no doscientas
+          automáticas — y cada sector tiene su paleta, así que dos clientes tuyos
+          nunca se parecen entre sí. La diferencia se ve cuando el dueño abre el
+          enlace delante de ti.</p>
+      </div>
+      <ul class="lista">
+        <li><strong>Tipografía y retícula de verdad</strong><span>Fraunces y Karla, medidas a mano. Nada de Inter por defecto.</span></li>
+        <li><strong>Las fotos se tratan</strong><span>Recorte, exposición, curva de color y nitidez iguales para todas. Las fotos del móvil del dueño y las de Google dejan de desentonar.</span></li>
+        <li><strong>Dos idiomas de serie</strong><span>Una web en València sale en castellano y catalán, con su etiqueta hreflang. En Madrid con turismo, en inglés.</span></li>
+        <li><strong>Mapa sin cookies</strong><span>OpenStreetMap en vez de Google: el cliente no necesita banner de cookies solo por el mapa.</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="ejemplo" style="background:var(--superficie);border-top:1px solid var(--linha);border-bottom:1px solid var(--linha)">
+  <div class="wrap">
+    <div class="cab-seccion">
+      <span class="num">03</span>
+      <h2>Míralo antes de pagar nada</h2>
+      <p class="nota">Negocio, dirección y textos son ficticios: es una muestra de diseño.</p>
+    </div>
+    <div class="dos">
+      <div>
+        <h3 class="serif" style="font-size:1.6rem;font-weight:500;margin:0 0 12px">Taberna La Escalera</h3>
+        <p style="color:var(--suave);margin:0 0 22px">Una taberna de Madrid, con carta, galería, horario que se actualiza
+          solo y mapa. Es exactamente lo que recibiría un cliente de hostelería.</p>
+        <div class="acciones" style="margin-top:0">
+          <a class="boton" href="taberna-la-escalera/">Abrir la web</a>
+          <a class="boton secundario" href="taberna-la-escalera/en/">Versión en inglés</a>
+        </div>
+      </div>
+      <div class="aviso">
+        <p><strong>Nada de promesas raras.</strong> Esto no es un curso ni un método secreto.
+          Es una herramienta que hace webs buenas y rápidas, y un mercado que sigue
+          pagando por ellas. Vender sigue siendo llamar a puertas: si no quieres
+          hablar con gente, no es para ti.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="precios">
+  <div class="wrap">
+    <div class="cab-seccion">
+      <span class="num">04</span>
+      <h2>Precios</h2>
+      <p class="nota">Precios de lanzamiento. Sin contrato de permanencia.</p>
+    </div>
+    <div class="precos">
+      <div class="plano">
+        <h3>Starter</h3>
+        <div class="prezo">39 €<small> /mes</small></div>
+        <p style="font-size:13.5px;color:var(--suave);margin:0">Para probar el mercado sin compromiso.</p>
+        <ul>
+          <li>10 búsquedas al día</li>
+          <li>Webs ilimitadas</li>
+          <li>Enlace privado para enseñar</li>
+          <li>Dominio incluido al publicar</li>
+          <li>Entrega del archivo al cliente</li>
+        </ul>
+        <a class="boton secundario" href="mailto:hola@escaparate.es?subject=Quiero%20Starter">Empezar con Starter</a>
+      </div>
+      <div class="plano destaque">
+        <span class="etiqueta-plano">El que se vende solo</span>
+        <h3>Pro</h3>
+        <div class="prezo">79 €<small> /mes</small></div>
+        <p style="font-size:13.5px;color:var(--suave);margin:0">Para quien va a vender de verdad.</p>
+        <ul>
+          <li>Búsquedas sin límite</li>
+          <li>Webs ilimitadas</li>
+          <li>Segundo idioma en cada web</li>
+          <li>Mapa y tratamiento de fotos</li>
+          <li>Guiones de llamada y objeciones</li>
+          <li>Soporte por WhatsApp</li>
+        </ul>
+        <a class="boton" href="mailto:hola@escaparate.es?subject=Quiero%20Pro">Empezar con Pro</a>
+      </div>
+      <div class="plano">
+        <h3>Vitalicio</h3>
+        <div class="prezo">297 €<small> una vez</small></div>
+        <p style="font-size:13.5px;color:var(--suave);margin:0">Todo lo de Pro, para siempre. 20 plazas.</p>
+        <ul>
+          <li>Todo lo del plan Pro</li>
+          <li>Pago único, sin mensualidad</li>
+          <li>Actualizaciones incluidas</li>
+          <li>Precio cerrado de por vida</li>
+        </ul>
+        <a class="boton secundario" href="mailto:hola@escaparate.es?subject=Quiero%20el%20vitalicio">Reservar plaza</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="preguntas" style="padding-top:0">
+  <div class="wrap">
+    <div class="cab-seccion">
+      <span class="num">05</span>
+      <h2>Preguntas frecuentes</h2>
+    </div>
+    <div class="faq">
+      <details open><summary>¿Necesito saber diseñar o programar?</summary>
+        <p>No. Eliges el sector y la web sale montada. Si quieres cambiar un texto,
+          se cambia en el mismo panel; no hay que tocar código.</p></details>
+      <details><summary>¿Cuánto puedo cobrar por cada web?</summary>
+        <p>Lo pones tú. En España una web de una página para un bar o una peluquería
+          se está vendiendo entre 300 y 600 €, y una de varias páginas bastante más.
+          Nosotros no cobramos comisión sobre tus ventas.</p></details>
+      <details><summary>¿Puedo mandar WhatsApps o correos a los negocios?</summary>
+        <p>Mejor no, y esto es importante. En España el envío de publicidad por correo
+          electrónico o mensajería sin consentimiento previo está prohibido incluso
+          entre empresas (LSSI, art. 21), con sanciones que empiezan en 30.001 €.
+          Por eso la herramienta está pensada para entrar por teléfono o en persona,
+          y los guiones que damos son para eso. Llamar a un negocio y entrar a
+          preguntar no tiene ese problema.</p></details>
+      <details><summary>¿La web es del cliente o mía?</summary>
+        <p>Del cliente. Le entregas un archivo HTML que funciona en cualquier
+          alojamiento, y el dominio se registra a su nombre. Si mañana dejas de usar
+          Escaparate, sus webs siguen funcionando.</p></details>
+      <details><summary>¿En qué idiomas salen?</summary>
+        <p>Castellano, catalán, gallego e inglés. Puedes entregar la misma web en dos
+          idiomas con un enlace para cambiar de uno a otro, y Google los indexa por
+          separado. Es de las cosas que más justifica subir el precio.</p></details>
+      <details><summary>¿Qué pasa si no vendo nada?</summary>
+        <p>Cancelas y ya está, no hay permanencia. Pero sé honesto contigo mismo:
+          la herramienta tarda diez minutos en hacer su parte; el resto son llamadas.
+          Si en un mes no has hablado con veinte dueños, el problema no es la web.</p></details>
+    </div>
+  </div>
+</section>
+
+<section class="cierre">
+  <div class="wrap">
+    <h2>La primera web la puedes tener esta tarde.</h2>
+    <p>Elige un negocio de tu barrio y míralo. Si te convence lo que ves, entonces
+      hablamos de venderlo.</p>
+    <a class="boton" href="mailto:hola@escaparate.es?subject=Quiero%20probar%20Escaparate">Pedir acceso</a>
+  </div>
+</section>
+
+</main>
+
+<footer class="pie">
+  <div class="wrap pie-in">
+    <div>
+      <div class="pie-marca">Escaparate</div>
+      Webs para negocios locales · España<br>
+      hola@escaparate.es
+    </div>
+    <div>
+      <a href="muestras.html">Todas las muestras</a> ·
+      <a href="#">Aviso legal</a> · <a href="#">Privacidad</a> · <a href="#">Cookies</a><br>
+      © 2026 Escaparate
+    </div>
+  </div>
+</footer>
+</body>
+</html>
