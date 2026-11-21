@@ -53,9 +53,8 @@
     brindeT = setTimeout(function () { b.classList.remove("visivel"); }, 3400);
   }
 
-  var VISTAS = ["entrar", "dashboard", "buscar", "resultados", "gerando",
-                "gerar", "dominio", "painel"];
-  var COM_DOCK = ["dashboard", "buscar", "resultados", "painel"];
+  var VISTAS = ["entrar", "dashboard", "buscar", "gerando", "gerar", "dominio", "painel"];
+  var COM_DOCK = ["dashboard", "buscar", "painel"];
 
   function mostrar(v) {
     VISTAS.forEach(function (x) {
@@ -74,7 +73,7 @@
     });
     if (v === "dashboard") renderDashboard();
     if (v === "painel") renderPainel();
-    if (v === "buscar") montarGlobo();
+    if (v === "buscar") { montarGlobo(); renderCidadesLaterais(); }
     window.scrollTo(0, 0);
   }
 
@@ -96,7 +95,6 @@
   document.querySelectorAll(".dock button[data-ir]").forEach(function (b) {
     b.addEventListener("click", function () {
       var ir = b.getAttribute("data-ir");
-      if (ir === "buscar") { wiz = { pais: null, ciudad: null, nicho: null }; abrirPasso(1); }
       mostrar(ir);
     });
   });
@@ -187,82 +185,139 @@
     svg.innerHTML = out;
   }
 
-  // ------------------------------------------------------------------ wizard
-  function abrirPasso(n) {
+  // ------------------------------------------------------------- busca: modal
+  var cidades = {};   // ciudad -> {n: leads, nichos: Set}
+  (function indexar() {
+    Object.keys(window.LEADS || {}).forEach(function (k) {
+      var d = window.LEADS[k];
+      if (!cidades[d.ciudad]) cidades[d.ciudad] = { n: 0, nichos: {} };
+      cidades[d.ciudad].n += d.leads.length;
+      cidades[d.ciudad].nichos[d.nicho] = 1;
+    });
+  })();
+  var listaCidades = Object.keys(cidades).sort(function (a, b) { return a.localeCompare(b, "es"); });
+
+  var MAX_BUSCAS = 8;
+  var buscasHoje = estado.buscasHoje || 0;
+
+  function abrirModal(passo) {
+    wiz = passo === 1 ? { pais: null, ciudad: null, nicho: null } : wiz;
+    $("#modal-busca").hidden = false;
+    document.body.style.overflow = "hidden";
+    renderModal(passo, 1);
+  }
+  function fecharModal() {
+    $("#modal-busca").hidden = true;
+    document.body.style.overflow = "";
+    Globo.parar();
+  }
+  $("#mb-fechar").addEventListener("click", fecharModal);
+  $("#modal-fundo").addEventListener("click", fecharModal);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && !$("#modal-busca").hidden) fecharModal();
+  });
+
+  function renderModal(n) {
     ["p1", "p2", "p3"].forEach(function (id, i) {
       document.getElementById(id).classList.toggle("on", i < n);
     });
-    $("#wiz-passo").textContent = "Paso " + n + " de 3";
-    var corpo = $("#wiz-corpo-campo");
-    var migalhas = $("#wiz-migalhas");
-    migalhas.innerHTML = "";
-    if (wiz.ciudad) migalhas.innerHTML += '<span class="migalha">📍 <b>' + esc(wiz.ciudad) + "</b></span>";
-    if (wiz.nicho) migalhas.innerHTML += '<span class="migalha"><b>' +
-      esc((window.NICHOS[wiz.nicho] || {}).nombre || wiz.nicho) + "</b></span>";
-    $("#wiz-contador").textContent =
-      Object.keys(window.LEADS || {}).length + " combinaciones de ciudad y nicho cargadas";
+    $("#mb-passo").textContent = "Paso " + n + " de 3";
+    var campo = $("#mb-campo");
+    var mig = $("#mb-migalhas");
+    mig.innerHTML = '<span class="bc pais">Portugal</span>';
+    if (wiz.ciudad) mig.innerHTML = '<span class="bc pais">Portugal</span>' +
+      '<span class="bc">📍 <b>' + esc(wiz.ciudad) + "</b></span>";
+    if (wiz.nicho) mig.innerHTML = '<span class="bc pais">Portugal</span>' +
+      '<span class="bc">📍 <b>' + esc(wiz.ciudad) + "</b></span>" +
+      '<span class="bc"><b>' + esc((window.NICHOS[wiz.nicho] || {}).nombre || wiz.nicho) + "</b></span>";
+    $("#mb-contador").textContent = buscasHoje + "/" + MAX_BUSCAS + " búsquedas hoy";
 
     if (n === 1) {
-      $("#wiz-pergunta").textContent = "¿Qué país?";
-      $("#wiz-dica").textContent = "De momento trabajamos solo en España.";
-      corpo.innerHTML = '<div class="pais-lista">' +
+      $("#mb-pergunta").textContent = "¿Qué país?";
+      $("#mb-dica").textContent = "De momento trabajamos solo en España.";
+      campo.innerHTML = '<div class="pais-lista">' +
         '<div class="pais" data-pais="ES">🇪🇸 España</div>' +
         '<div class="pais off">🇵🇹 Portugal <small style="color:var(--suave)">pronto</small></div>' +
         '<div class="pais off">🇫🇷 Francia <small style="color:var(--suave)">pronto</small></div></div>';
-      corpo.querySelector("[data-pais]").addEventListener("click", function () {
-        wiz.pais = "ES"; abrirPasso(2);
+      campo.querySelector("[data-pais]").addEventListener("click", function () {
+        wiz.pais = "ES"; renderModal(2, 2);
       });
     }
 
     if (n === 2) {
-      $("#wiz-pergunta").textContent = "¿Qué ciudad?";
-      $("#wiz-dica").textContent = "Escribe y elige de la lista.";
-      var cidades = {};
-      Object.keys(window.LEADS || {}).forEach(function (k) {
-        var d = window.LEADS[k];
-        cidades[d.ciudad] = (cidades[d.ciudad] || 0) + d.leads.length;
-      });
-      var lista = Object.keys(cidades).sort(function (a, b) { return a.localeCompare(b, "es"); });
-      corpo.innerHTML = '<div class="campo"><input id="wiz-cidade" placeholder="Ej: Madrid" ' +
-        'autocomplete="off"></div><div class="chips" id="wiz-chips"></div>';
-      var chips = $("#wiz-chips");
-      var sugest = (estado.recentes || []).slice();
-      lista.forEach(function (c) { if (sugest.indexOf(c) < 0) sugest.push(c); });
-      sugest.slice(0, 8).forEach(function (c) {
-        var b = el("button", "chip", esc(c));
+      $("#mb-pergunta").textContent = "¿Qué ciudad?";
+      $("#mb-dica").textContent = "Escribe y elige de la lista — o elige una de tus ciudades recientes.";
+      campo.innerHTML =
+        '<div class="autocomp"><div class="campo" style="margin:0">' +
+        '<input id="mb-cidade" placeholder="Ej: Campinas" autocomplete="off">' +
+        '</div><div class="resultados" id="mb-sug" hidden></div></div>' +
+        '<div class="chips" id="mb-recentes"></div>';
+      var inp = $("#mb-cidade"), sug = $("#mb-sug");
+
+      function pintarSug(q) {
+        var achadas = listaCidades.filter(function (c) {
+          return !q || c.toLowerCase().indexOf(q.toLowerCase()) >= 0;
+        }).slice(0, 7);
+        if (!achadas.length) {
+          sug.innerHTML = '<div class="nada">Ninguna ciudad encontrada con ese nombre. Prueba otra.</div>';
+        } else {
+          sug.innerHTML = achadas.map(function (c) {
+            var co = (window.CIDADES || {})[c];
+            return '<div class="res" data-cidade="' + esc(c) + '"><span>' + esc(c) +
+              "</span><small>" + (co
+                ? Math.abs(co[0]).toFixed(4) + " / " + Math.abs(co[1]).toFixed(4)
+                : cidades[c].n + " negocios") + "</small></div>";
+          }).join("");
+        }
+        sug.hidden = false;
+        sug.querySelectorAll("[data-cidade]").forEach(function (d) {
+          d.addEventListener("click", function () { escolherCidade(d.getAttribute("data-cidade")); });
+        });
+      }
+      inp.addEventListener("focus", function () { pintarSug(inp.value); });
+      inp.addEventListener("input", function () { pintarSug(inp.value); });
+
+      var rec = $("#mb-recentes");
+      (estado.recentes || []).slice(0, 5).forEach(function (c) {
+        var b = el("button", "chip", "📍 " + esc(c));
         b.addEventListener("click", function () { escolherCidade(c); });
-        chips.appendChild(b);
+        rec.appendChild(b);
       });
-      var inp = $("#wiz-cidade");
-      inp.addEventListener("input", function () {
-        chips.innerHTML = "";
-        var q = inp.value.trim().toLowerCase();
-        lista.filter(function (c) { return c.toLowerCase().indexOf(q) >= 0; })
-          .slice(0, 10).forEach(function (c) {
-            var b = el("button", "chip", esc(c) + ' <small style="color:var(--suave)">' +
-              cidades[c] + "</small>");
-            b.addEventListener("click", function () { escolherCidade(c); });
-            chips.appendChild(b);
-          });
-      });
+      if (!rec.children.length) {
+        listaCidades.slice(0, 6).forEach(function (c) {
+          var b = el("button", "chip", esc(c));
+          b.addEventListener("click", function () { escolherCidade(c); });
+          rec.appendChild(b);
+        });
+      }
       inp.focus();
     }
 
     if (n === 3) {
-      $("#wiz-pergunta").textContent = "¿Qué nicho?";
-      $("#wiz-dica").textContent = "Cada nicho trae su paleta y sus etiquetas.";
-      corpo.innerHTML = '<div class="campo"><input id="wiz-filtro" placeholder="Filtrar nichos…" ' +
-        'autocomplete="off"></div><div class="nichos-grade" id="wiz-nichos"></div>';
-      pintarNichos(nichosDa(wiz.ciudad), "");
-      $("#wiz-filtro").addEventListener("input", function (e) {
-        pintarNichos(nichosDa(wiz.ciudad), e.target.value.trim().toLowerCase());
+      $("#mb-pergunta").textContent = "¿Qué nicho?";
+      $("#mb-dica").textContent = "Cada nicho trae su paleta y sus etiquetas.";
+      campo.innerHTML = '<div class="campo"><input id="mb-filtro" placeholder="Filtrar nichos…" ' +
+        'autocomplete="off"></div><div class="nichos-grade" id="mb-nichos"></div>' +
+        '<button class="bt verde" id="mb-buscar" style="width:100%;margin-top:14px">Buscar leads</button>';
+      pintarNichosModal(nichosDa(wiz.ciudad), "");
+      $("#mb-filtro").addEventListener("input", function (e) {
+        pintarNichosModal(nichosDa(wiz.ciudad), e.target.value.trim().toLowerCase());
+      });
+      $("#mb-buscar").addEventListener("click", function () {
+        if (!wiz.nicho) { brinde("Elige un nicho primero."); return; }
+        fecharModal();
+        varrer();
       });
     }
-    Globo.marcar(null, null);
+
+    // globo do modal
+    var cv = document.getElementById("globo");
+    Globo.montar(cv);
     if (wiz.ciudad && window.CIDADES && window.CIDADES[wiz.ciudad]) {
       Globo.marcar(window.CIDADES[wiz.ciudad][0], window.CIDADES[wiz.ciudad][1]);
       $("#globo-coords").textContent = latlon(wiz.ciudad);
     } else {
+      Globo.marcar(null, null);
       $("#globo-coords").textContent = "— · —";
     }
   }
@@ -276,8 +331,9 @@
     return cont;
   }
 
-  function pintarNichos(disp, filtro) {
-    var grade = $("#wiz-nichos");
+  function pintarNichosModal(disp, filtro) {
+    var grade = $("#mb-nichos");
+    if (!grade) return;
     grade.innerHTML = "";
     var nomes = function (n) { return (window.NICHOS[n] || {}).nombre || n; };
     Object.keys(disp).sort(function (a, b) {
@@ -290,7 +346,14 @@
         '<span class="ic" style="background:' + esc(cor.acento || "#3b82f6") + '">' +
         esc(nome.charAt(0)) + "</span><span>" + esc(nome) +
         ' <small style="color:var(--suave)">' + disp[n] + "</small></span>");
-      b.addEventListener("click", function () { wiz.nicho = n; verResultados(); });
+      if (wiz.nicho === n) b.style.borderColor = "rgba(96,165,250,.7)";
+      b.addEventListener("click", function () {
+        wiz.nicho = n;
+        grade.querySelectorAll(".nicho-item").forEach(function (x) {
+          x.style.borderColor = "";
+        });
+        b.style.borderColor = "rgba(96,165,250,.7)";
+      });
       grade.appendChild(b);
     });
   }
@@ -299,8 +362,17 @@
     wiz.ciudad = c; wiz.nicho = null;
     if (estado.recentes.indexOf(c) < 0) estado.recentes.unshift(c);
     estado.recentes = estado.recentes.slice(0, 6);
-    gravar(); abrirPasso(3);
+    gravar();
+    renderModal(3, 3);
   }
+
+  $("#mb-voltar").addEventListener("click", function () {
+    var n = ["p1", "p2", "p3"].filter(function (id) {
+      return document.getElementById(id).classList.contains("on");
+    }).length;
+    if (n <= 1) { fecharModal(); return; }
+    renderModal(n - 1, n - 1);
+  });
 
   function latlon(cidade) {
     var c = (window.CIDADES || {})[cidade];
@@ -309,49 +381,63 @@
       " · LON " + Math.abs(c[1]).toFixed(4) + "° " + (c[1] < 0 ? "O" : "E");
   }
 
-  function montarGlobo() {
-    var cv = document.getElementById("globo");
-    if (cv && !cv.dataset.pronto) { Globo.montar(cv); cv.dataset.pronto = "1"; }
+  // ------------------------------------------------------------- varrimento
+  function varrer() {
+    buscasHoje++;
+    estado.buscasHoje = buscasHoje;
+    gravar();
+    var sc = $("#scanner");
+    sc.hidden = false;
+    $("#scanner-titulo").textContent = "Varrendo " + wiz.ciudad + "…";
+    $("#scanner-coords").textContent = latlon(wiz.ciudad);
+    var cv = document.getElementById("globo-scan");
+    Globo.montar(cv);
+    if (window.CIDADES && window.CIDADES[wiz.ciudad]) {
+      Globo.marcar(window.CIDADES[wiz.ciudad][0], window.CIDADES[wiz.ciudad][1]);
+    }
+    setTimeout(function () {
+      sc.hidden = true;
+      Globo.parar();
+      mostrar("buscar");
+      aplicarBusca(true);
+    }, 1900);
   }
 
-  $("#wiz-voltar").addEventListener("click", function () {
-    var n = ["p1", "p2", "p3"].filter(function (id) {
-      return document.getElementById(id).classList.contains("on");
-    }).length;
-    if (n <= 1) { mostrar("dashboard"); return; }
-    abrirPasso(n - 1);
-  });
-  $("#nova-busca").addEventListener("click", function () {
-    wiz = { pais: null, ciudad: null, nicho: null };
-    abrirPasso(1); mostrar("buscar");
-  });
+  // ---------------------------------------------------------------- resultados
+  var filtroAtual = "sem";
+  var resultadoAtual = null;
 
-  // -------------------------------------------------------------- resultados
-  function verResultados() {
+  function aplicarBusca(reset) {
     var d = (window.LEADS || {})[wiz.ciudad + "|" + wiz.nicho];
-    if (!d || !d.leads.length) { brinde("Sin negocios para esa combinación."); return; }
-    mostrar("resultados");
-    renderResultados(d);
-  }
+    resultadoAtual = d || null;
+    if (reset) filtroAtual = "sem";
+    if (!d) {
+      $("#busca-vazia").hidden = false;
+      $("#busca-resultados").hidden = true;
+      return;
+    }
+    $("#busca-vazia").hidden = true;
+    $("#busca-resultados").hidden = false;
 
-  function renderResultados(d) {
-    var nicho = window.NICHOS[d.nicho] || {};
-    var semWeb = d.leads.filter(function (l) { return !l.web; }).length;
-    $("#res-titulo").textContent = nicho.nombre + " · " + d.ciudad;
-    $("#res-sub").textContent = d.leads.length + " negocios · " + semWeb + " sin web";
+    var nicho = window.NICHOS[wiz.nicho] || {};
+    var sem = d.leads.filter(function (l) { return !l.web; }).length;
+    $("#res-cont").innerHTML = "<b>" + d.leads.length + "</b> leads · " +
+      "<b>" + sem + "</b> sin web · <b>" + (d.leads.length - sem) + "</b> ya tiene web — " +
+      esc(nicho.nombre) + " · " + esc(d.ciudad);
 
-    var rec = $("#recentes");
-    rec.innerHTML = "";
-    (estado.recentes || []).forEach(function (c) {
-      var li = el("li", null, "📍 " + esc(c));
-      li.addEventListener("click", function () { wiz.ciudad = c; abrirPasso(3); mostrar("buscar"); });
-      rec.appendChild(li);
+    document.querySelectorAll(".filtro").forEach(function (b) {
+      b.classList.toggle("on", b.getAttribute("data-filtro") === filtroAtual);
     });
-    if (!estado.recentes.length) rec.innerHTML = '<li style="cursor:default">—</li>';
+
+    var lista = d.leads.filter(function (l) {
+      if (filtroAtual === "sem") return !l.web;
+      if (filtroAtual === "com") return !!l.web;
+      return true;
+    });
 
     var cont = $("#alvos");
     cont.innerHTML = "";
-    d.leads.forEach(function (l) {
+    lista.forEach(function (l) {
       var cor = nicho.colores || {};
       var card = el("article", "alvo");
       card.innerHTML =
@@ -372,10 +458,48 @@
           '<button class="bt verde pequeno">⚡ Generar sitio</button>' +
         "</div>";
       card.querySelector(".bt").addEventListener("click", function () {
-        animarGerando(l, d.nicho);
+        animarGerando(l, wiz.nicho);
       });
       cont.appendChild(card);
     });
+    $("#res-rodape").textContent = lista.length + " leads encontrados";
+  }
+
+  document.querySelectorAll(".filtro").forEach(function (b) {
+    b.addEventListener("click", function () {
+      filtroAtual = b.getAttribute("data-filtro");
+      aplicarBusca(false);
+    });
+  });
+
+  function renderCidadesLaterais() {
+    var ul = $("#cidades-lista");
+    if (!ul) return;
+    ul.innerHTML = "";
+    var recentes = (estado.recentes || []).slice();
+    listaCidades.forEach(function (c) { if (recentes.indexOf(c) < 0) recentes.push(c); });
+    $("#cidades-vazio").hidden = recentes.length > 0;
+    recentes.slice(0, 12).forEach(function (c) {
+      var li = el("li");
+      var nichos = Object.keys(cidades[c].nichos).slice(0, 3);
+      li.innerHTML = '<div><span class="cid">' + esc(c) + '</span>' +
+        '<span class="quando">' + cidades[c].n + "</span></div>" +
+        '<div class="chips-mini">' + nichos.map(function (n) {
+          return "<span>" + esc((window.NICHOS[n] || {}).nombre || n) + "</span>";
+        }).join("") + "</div>";
+      li.addEventListener("click", function () {
+        wiz.ciudad = c; wiz.nicho = null;
+        abrirModal(3);
+      });
+      ul.appendChild(li);
+    });
+  }
+
+  $("#nova-busca").addEventListener("click", function () { abrirModal(1); });
+
+  function montarGlobo() {
+    var cv = document.getElementById("globo");
+    if (cv && $("#modal-busca").hidden === false) Globo.montar(cv);
   }
 
   // ------------------------------------------------------------------ gerando
@@ -628,6 +752,5 @@
   }
 
   // ----------------------------------------------------------------- arranque
-  montarGlobo();
   mostrar(estado.usuario ? "dashboard" : "entrar");
 })();

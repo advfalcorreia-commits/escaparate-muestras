@@ -1,2 +1,2 @@
-/* Coordenadas das cidades para o globo. */
-window.CIDADES = {"Madrid": [40.416782, -3.703507], "Barcelona": [41.3825802, 2.177073], "Sevilla": [37.3886303, -5.9953403], "Zaragoza": [41.6915847, -0.9101268], "Málaga": [36.7647913, -4.4422005], "Murcia": [37.9923795, -1.1305431], "Palma": [39.5695818, 2.6500745], "Toledo": [39.8558913, -4.024265]};
+/* Coordenadas de cidades e distritos para o globo. */
+window.CIDADES = {"Madrid": [40.41678, -3.70351], "Madrid · Latina": [40.40739, -3.74933], "Madrid · Chamberí": [40.44262, -3.71216], "Madrid · Ciudad Lineal": [40.44482, -3.64078], "Madrid · Centro": [40.421, -3.71525], "Madrid · Arganzuela": [40.40983, -3.7183], "Madrid · Carabanchel": [40.37524, -3.74497], "Madrid · Moncloa-Aravaca": [40.45916, -3.72558]};

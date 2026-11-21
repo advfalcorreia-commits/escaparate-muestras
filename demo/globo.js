@@ -109,6 +109,8 @@ window.Globo = (function () {
     ctx = canvas.getContext("2d");
     if (!PONTOS) PONTOS = gerarPontos(1400);
     medir();
+    // remove o listener anterior: o mesmo módulo serve o modal e o scanner
+    window.removeEventListener("resize", medir);
     window.addEventListener("resize", medir);
     if (!raf) ciclo();
   }
