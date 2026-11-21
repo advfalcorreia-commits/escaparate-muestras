@@ -1,14 +1,19 @@
-/* O painel: dashboard -> nova busca (3 passos) -> resultados -> gerando -> sitio.
-   Tudo no browser, estado em localStorage, zero servidor. */
+/* Painel: dashboard -> nova busca (3 passos) -> resultados -> gerando ->
+   editor (modelo, secções, cor, botões, contacto, edição a clique) -> domínio
+   -> venda. Tudo no browser; estado em localStorage. */
 
 (function () {
   "use strict";
 
-  var CHAVE = "escaparate_demo_v2";
+  var CHAVE = "escaparate_demo_v3";
   var estado = carregar();
-  var alvo = null;                 // { lead, nicho }
   var wiz = { pais: null, ciudad: null, nicho: null };
-  var ultimoResultado = [];
+  var ed = null;
+  var timerGerando = null;
+
+  var CORES = ["#8c2f39", "#b45309", "#0f766e", "#1d4ed8", "#7c3aed",
+               "#be123c", "#15803d", "#0e7490", "#4d7c0f", "#0f172a"];
+
   var SVG = {
     tel: '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1.1-.2 1.2.4 2.6.6 4 .6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.4.2 2.8.6 4 .1.4 0 .8-.2 1.1l-2.3 2.7z"/></svg>',
     wsp: '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm0 18a8 8 0 01-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1112 20zm4.5-6c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.5 6.5 0 01-1.9-1.2 7.2 7.2 0 01-1.3-1.7c-.1-.2 0-.4.1-.5l.4-.5.2-.4v-.4L10.5 7c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5 0-.7.3-.2.3-.9.9-.9 2.1s.9 2.5 1 2.6c.1.2 1.7 2.7 4.2 3.7 1.5.6 2.1.7 2.9.6.5-.1 1.4-.6 1.6-1.1.2-.6.2-1 .1-1.1z"/></svg>',
@@ -32,7 +37,12 @@
   function gravar() {
     try { localStorage.setItem(CHAVE, JSON.stringify(estado)); } catch (e) {}
   }
-  function esc(s) { return window.Preview ? Preview.esc(s) : String(s == null ? "" : s); }
+  function esc(s) { return Preview.esc(s); }
+  function slugificar(s) {
+    return String(s || "").toLowerCase().normalize("NFD")
+      .replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "").slice(0, 40);
+  }
 
   var brindeT;
   function brinde(msg) {
@@ -43,7 +53,8 @@
     brindeT = setTimeout(function () { b.classList.remove("visivel"); }, 3400);
   }
 
-  var VISTAS = ["entrar", "dashboard", "buscar", "resultados", "gerando", "gerar", "painel"];
+  var VISTAS = ["entrar", "dashboard", "buscar", "resultados", "gerando",
+                "gerar", "dominio", "painel"];
   var COM_DOCK = ["dashboard", "buscar", "resultados", "painel"];
 
   function mostrar(v) {
@@ -58,7 +69,6 @@
     if (logado) av.textContent = estado.usuario.nombre.charAt(0);
     $("#btn-sair").hidden = !logado;
     $("#dock").hidden = !(logado && COM_DOCK.indexOf(v) >= 0);
-
     document.querySelectorAll(".dock button[data-ir]").forEach(function (b) {
       b.classList.toggle("ativo", b.getAttribute("data-ir") === v);
     });
@@ -74,8 +84,7 @@
     var f = e.target, nome = (f.nombre.value || "").trim(), mail = (f.email.value || "").trim();
     if (!nome || !mail) return;
     estado.usuario = { nombre: nome, email: mail };
-    gravar();
-    mostrar("dashboard");
+    gravar(); mostrar("dashboard");
     brinde("Hola, " + nome + ". Pulsa «Buscar» para empezar.");
   });
   $("#btn-sair").addEventListener("click", function () {
@@ -105,8 +114,8 @@
     $("#k-vendidas").textContent = vendidas.length;
     $("#k-conversao").textContent = taxa + " % de conversión";
     $("#d-vendida").textContent = vendidas.length;
-    $("#d-publicada").textContent = 0;
-    $("#d-borrador").textContent = webs.length - vendidas.length;
+    $("#d-publicada").textContent = webs.length - vendidas.length;
+    $("#d-borrador").textContent = 0;
 
     var cid = {}, nic = {}, tot = 0;
     Object.keys(window.LEADS || {}).forEach(function (k) {
@@ -118,12 +127,11 @@
     $("#c-nichos").textContent = Object.keys(nic).length;
 
     desenharBarras(webs);
-    desenharDonut(vendidas.length, 0, webs.length - vendidas.length);
+    desenharDonut(vendidas.length, webs.length - vendidas.length, 0);
   }
 
   function desenharBarras(webs) {
-    var svg = $("#barras");
-    var meses = [], hoje = new Date();
+    var svg = $("#barras"), meses = [], hoje = new Date();
     for (var i = 5; i >= 0; i--) {
       var d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
       meses.push({
@@ -143,11 +151,9 @@
     var max = Math.max(1, Math.max.apply(null, meses.map(function (m) {
       return Math.max(m.geradas, m.vendidas);
     })));
-    var W = 520, H = 170, base = 140, larg = W / meses.length;
-    var out = "";
+    var W = 520, base = 140, larg = W / meses.length, out = "";
     meses.forEach(function (m, i) {
-      var x = i * larg + larg * 0.18;
-      var w = larg * 0.26;
+      var x = i * larg + larg * 0.18, w = larg * 0.26;
       var hg = (m.geradas / max) * 100, hv = (m.vendidas / max) * 100;
       out += '<rect x="' + x + '" y="' + (base - hg) + '" width="' + w + '" height="' +
         Math.max(hg, 1) + '" rx="3" fill="#3b82f6" opacity="' + (hg ? .95 : .18) + '"/>';
@@ -162,24 +168,21 @@
   }
 
   function desenharDonut(vendidas, publicadas, borradores) {
-    var total = vendidas + publicadas + borradores;
-    var svg = $("#donut");
+    var total = vendidas + publicadas + borradores, svg = $("#donut");
     if (!total) {
       svg.innerHTML = '<circle cx="21" cy="21" r="15.9" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="6"/>';
       return;
     }
-    var partes = [
-      { n: vendidas, cor: "#22c55e" }, { n: publicadas, cor: "#3b82f6" },
-      { n: borradores, cor: "#64748b" }
-    ];
+    var partes = [{ n: vendidas, cor: "#22c55e" }, { n: publicadas, cor: "#3b82f6" },
+                  { n: borradores, cor: "#64748b" }];
     var acc = 0, out = '<circle cx="21" cy="21" r="15.9" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="6"/>';
     partes.forEach(function (p) {
       if (!p.n) return;
-      var frac = p.n / total, dash = (frac * 100).toFixed(2);
+      var dash = (p.n / total * 100).toFixed(2);
       out += '<circle cx="21" cy="21" r="15.9" fill="none" stroke="' + p.cor +
         '" stroke-width="6" stroke-dasharray="' + dash + ' ' + (100 - dash) +
         '" stroke-dashoffset="' + (25 - acc).toFixed(2) + '"/>';
-      acc += frac * 100;
+      acc += p.n / total * 100;
     });
     svg.innerHTML = out;
   }
@@ -190,14 +193,14 @@
       document.getElementById(id).classList.toggle("on", i < n);
     });
     $("#wiz-passo").textContent = "Paso " + n + " de 3";
-    var corpo = $("#wiz-corpo-campo"), migalhas = $("#wiz-migalhas");
+    var corpo = $("#wiz-corpo-campo");
+    var migalhas = $("#wiz-migalhas");
     migalhas.innerHTML = "";
     if (wiz.ciudad) migalhas.innerHTML += '<span class="migalha">📍 <b>' + esc(wiz.ciudad) + "</b></span>";
     if (wiz.nicho) migalhas.innerHTML += '<span class="migalha"><b>' +
       esc((window.NICHOS[wiz.nicho] || {}).nombre || wiz.nicho) + "</b></span>";
-
-    var total = Object.keys(window.LEADS || {}).length;
-    $("#wiz-contador").textContent = total + " combinaciones de ciudad y nicho cargadas";
+    $("#wiz-contador").textContent =
+      Object.keys(window.LEADS || {}).length + " combinaciones de ciudad y nicho cargadas";
 
     if (n === 1) {
       $("#wiz-pergunta").textContent = "¿Qué país?";
@@ -205,8 +208,7 @@
       corpo.innerHTML = '<div class="pais-lista">' +
         '<div class="pais" data-pais="ES">🇪🇸 España</div>' +
         '<div class="pais off">🇵🇹 Portugal <small style="color:var(--suave)">pronto</small></div>' +
-        '<div class="pais off">🇫🇷 Francia <small style="color:var(--suave)">pronto</small></div>' +
-        "</div>";
+        '<div class="pais off">🇫🇷 Francia <small style="color:var(--suave)">pronto</small></div></div>';
       corpo.querySelector("[data-pais]").addEventListener("click", function () {
         wiz.pais = "ES"; abrirPasso(2);
       });
@@ -224,11 +226,9 @@
       corpo.innerHTML = '<div class="campo"><input id="wiz-cidade" placeholder="Ej: Madrid" ' +
         'autocomplete="off"></div><div class="chips" id="wiz-chips"></div>';
       var chips = $("#wiz-chips");
-      var sugeridas = (estado.recentes || []).slice(0, 4);
-      lista.forEach(function (c) {
-        if (sugeridas.indexOf(c) < 0) sugeridas.push(c);
-      });
-      sugeridas.slice(0, 8).forEach(function (c) {
+      var sugest = (estado.recentes || []).slice();
+      lista.forEach(function (c) { if (sugest.indexOf(c) < 0) sugest.push(c); });
+      sugest.slice(0, 8).forEach(function (c) {
         var b = el("button", "chip", esc(c));
         b.addEventListener("click", function () { escolherCidade(c); });
         chips.appendChild(b);
@@ -251,12 +251,11 @@
     if (n === 3) {
       $("#wiz-pergunta").textContent = "¿Qué nicho?";
       $("#wiz-dica").textContent = "Cada nicho trae su paleta y sus etiquetas.";
-      var disponiveis = nichosDa(wiz.ciudad);
       corpo.innerHTML = '<div class="campo"><input id="wiz-filtro" placeholder="Filtrar nichos…" ' +
         'autocomplete="off"></div><div class="nichos-grade" id="wiz-nichos"></div>';
-      pintarNichos(disponiveis, "");
+      pintarNichos(nichosDa(wiz.ciudad), "");
       $("#wiz-filtro").addEventListener("input", function (e) {
-        pintarNichos(disponiveis, e.target.value.trim().toLowerCase());
+        pintarNichos(nichosDa(wiz.ciudad), e.target.value.trim().toLowerCase());
       });
     }
     Globo.marcar(null, null);
@@ -288,26 +287,19 @@
       if (filtro && nome.toLowerCase().indexOf(filtro) < 0) return;
       var cor = (window.NICHOS[n] || {}).colores || {};
       var b = el("button", "nicho-item",
-        '<span class="ic" style="background:' + (cor.acento || "#3b82f6") + '">' +
+        '<span class="ic" style="background:' + esc(cor.acento || "#3b82f6") + '">' +
         esc(nome.charAt(0)) + "</span><span>" + esc(nome) +
         ' <small style="color:var(--suave)">' + disp[n] + "</small></span>");
-      b.addEventListener("click", function () { escolherNicho(n); });
+      b.addEventListener("click", function () { wiz.nicho = n; verResultados(); });
       grade.appendChild(b);
     });
   }
 
   function escolherCidade(c) {
-    wiz.ciudad = c;
-    wiz.nicho = null;
+    wiz.ciudad = c; wiz.nicho = null;
     if (estado.recentes.indexOf(c) < 0) estado.recentes.unshift(c);
     estado.recentes = estado.recentes.slice(0, 6);
-    gravar();
-    abrirPasso(3);
-  }
-
-  function escolherNicho(n) {
-    wiz.nicho = n;
-    comecarGerando();
+    gravar(); abrirPasso(3);
   }
 
   function latlon(cidade) {
@@ -319,30 +311,25 @@
 
   function montarGlobo() {
     var cv = document.getElementById("globo");
-    if (cv && !cv.dataset.pronto) {
-      Globo.montar(cv);
-      cv.dataset.pronto = "1";
-    }
+    if (cv && !cv.dataset.pronto) { Globo.montar(cv); cv.dataset.pronto = "1"; }
   }
 
   $("#wiz-voltar").addEventListener("click", function () {
-    var atual = ["p1", "p2", "p3"].filter(function (id) {
+    var n = ["p1", "p2", "p3"].filter(function (id) {
       return document.getElementById(id).classList.contains("on");
     }).length;
-    if (atual <= 1) { mostrar("dashboard"); return; }
-    abrirPasso(atual - 1);
+    if (n <= 1) { mostrar("dashboard"); return; }
+    abrirPasso(n - 1);
   });
   $("#nova-busca").addEventListener("click", function () {
     wiz = { pais: null, ciudad: null, nicho: null };
-    abrirPasso(1);
-    mostrar("buscar");
+    abrirPasso(1); mostrar("buscar");
   });
 
   // -------------------------------------------------------------- resultados
-  function comecarGerando() {
+  function verResultados() {
     var d = (window.LEADS || {})[wiz.ciudad + "|" + wiz.nicho];
     if (!d || !d.leads.length) { brinde("Sin negocios para esa combinación."); return; }
-    ultimoResultado = d.leads;
     mostrar("resultados");
     renderResultados(d);
   }
@@ -366,16 +353,14 @@
     cont.innerHTML = "";
     d.leads.forEach(function (l) {
       var cor = nicho.colores || {};
-      var inicial = (l.nombre || "?").trim().charAt(0).toUpperCase();
       var card = el("article", "alvo");
       card.innerHTML =
         '<div class="alvo-topo">' +
           '<span class="alvo-ic" style="background:' + esc(cor.acento || "#3b82f6") + '">' +
-            esc(inicial) + "</span>" +
+            esc((l.nombre || "?").charAt(0).toUpperCase()) + "</span>" +
           "<div><h4>" + esc(l.nombre) + "</h4>" +
           (l.web ? '<span class="tag com">Ya tiene web</span>'
-                 : '<span class="tag sem">Sin web</span>') +
-          "</div></div>" +
+                 : '<span class="tag sem">Sin web</span>') + "</div></div>" +
         '<div class="nota">' + (l.telefono ? "☎ " + esc(l.telefono) : "sin teléfono") +
           (l.direccion ? " · " + esc(l.direccion) : "") + "</div>" +
         '<div class="acoes">' +
@@ -387,62 +372,168 @@
           '<button class="bt verde pequeno">⚡ Generar sitio</button>' +
         "</div>";
       card.querySelector(".bt").addEventListener("click", function () {
-        abrirGerando(l, d.nicho);
+        animarGerando(l, d.nicho);
       });
       cont.appendChild(card);
     });
   }
 
   // ------------------------------------------------------------------ gerando
-  function abrirGerando(lead, nichoSlug) {
-    alvo = { lead: lead, nicho: nichoSlug };
+  function animarGerando(lead, nichoSlug) {
     var nicho = window.NICHOS[nichoSlug] || {};
     $("#g-titulo").textContent = lead.nombre;
-    $("#g-sub").textContent = nicho.nombre + " · " + (lead.ciudad || "");
+    $("#g-sub").textContent = (nicho.nombre || nichoSlug) + " · " + (lead.ciudad || "");
     var itens = document.querySelectorAll("#g-check li");
     itens.forEach(function (i) { i.classList.remove("on"); });
     mostrar("gerando");
 
-    var t0 = Date.now(), dur = 2600;
-    var crono = $("#g-crono");
-    var timer = setInterval(function () {
+    var t0 = Date.now(), dur = 2400, crono = $("#g-crono");
+    clearInterval(timerGerando);
+    timerGerando = setInterval(function () {
       var t = Date.now() - t0;
       crono.textContent = (t / 1000).toFixed(1) + "s";
       var passo = Math.floor(t / (dur / itens.length));
       itens.forEach(function (i, k) { i.classList.toggle("on", k <= passo); });
-      if (t >= dur) {
-        clearInterval(timer);
-        abrirGerar(lead, nichoSlug);
-      }
+      if (t >= dur) { clearInterval(timerGerando); abrirEditor(lead, nichoSlug); }
     }, 60);
   }
 
-  function abrirGerar(lead, nichoSlug) {
-    var nicho = window.NICHOS[nichoSlug] || {};
-    alvo = { lead: lead, nicho: nichoSlug };
-    $("#f-nome").textContent = lead.nombre;
-    var dados = [
-      ["Ciudad", [lead.direccion, lead.cp, lead.ciudad].filter(Boolean).join(", ") || "—"],
-      ["Teléfono", lead.telefono || "—"],
-      ["Horario", lead.horario_osm || "—"],
-      ["Nicho", (nicho.nombre || nichoSlug) + " · " + (nicho.plantilla || "")]
-    ];
-    $("#f-dados").innerHTML = dados.map(function (d) {
-      return "<li><b>" + esc(d[0]) + "</b><span>" + esc(d[1]) + "</span></li>";
-    }).join("");
+  // ------------------------------------------------------------------ editor
+  var SECOES = [
+    ["sobre", "Sobre nosotros"], ["carta", "Servicios / carta"],
+    ["galeria", "Galería"], ["horario", "Horario"], ["mapa", "Mapa"]
+  ];
 
+  function abrirEditor(lead, nichoSlug) {
+    var nicho = window.NICHOS[nichoSlug] || {};
     var ja = estado.webs.filter(function (w) {
       return w.lead.nombre === lead.nombre && w.nicho === nichoSlug;
     })[0];
-    $("#btn-vender").disabled = !!(ja && ja.vendida);
-    $("#btn-vender").textContent = ja && ja.vendida ? "Ya está vendida" : "Marcar como vendida";
-    $("#f-prezo").value = (ja && ja.precio) || 450;
-
-    $("#preview").srcdoc = Preview.construir(lead, nicho);
+    ed = {
+      lead: lead, nicho: nichoSlug,
+      modelo: (ja && ja.modelo) || "claro",
+      secoes: (ja && ja.secoes) || { sobre: true, carta: true, galeria: true, horario: true, mapa: true },
+      cor: (ja && ja.cor) || (nicho.colores || {}).acento,
+      cta: ja ? (ja.cta || "") : "",
+      ciudad: ja ? ja.ciudad : (lead.ciudad || ""),
+      direccion: ja ? ja.direccion : (lead.direccion || ""),
+      whatsapp: ja ? ja.whatsapp : (lead.telefono || ""),
+      horario: ja ? ja.horario : (lead.horario_osm || ""),
+      textos: (ja && ja.textos) || {},
+      slug: (ja && ja.slug) || slugificar(lead.nombre)
+    };
+    pintarPainel();
+    atualizarPreview();
     mostrar("gerar");
   }
 
-  $("#btn-voltar-res").addEventListener("click", function () { mostrar("resultados"); });
+  function pintarPainel() {
+    var nicho = window.NICHOS[ed.nicho] || {};
+
+    document.querySelectorAll("#ed-modelo button").forEach(function (b) {
+      b.classList.toggle("on", b.getAttribute("data-modelo") === ed.modelo);
+    });
+
+    var ul = $("#ed-secoes");
+    ul.innerHTML = "";
+    SECOES.forEach(function (par) {
+      var li = el("li", null, "<span>" + par[1] + "</span>");
+      var bt = el("button", "interruptor" + (ed.secoes[par[0]] !== false ? " on" : ""));
+      bt.addEventListener("click", function () {
+        ed.secoes[par[0]] = ed.secoes[par[0]] === false;
+        bt.classList.toggle("on", ed.secoes[par[0]] !== false);
+        atualizarPreview();
+      });
+      li.appendChild(bt);
+      ul.appendChild(li);
+    });
+
+    var co = $("#ed-cores");
+    co.innerHTML = "";
+    var paleta = CORES.slice();
+    var acentoNicho = (nicho.colores || {}).acento;
+    if (acentoNicho && paleta.indexOf(acentoNicho) < 0) paleta.unshift(acentoNicho);
+    paleta.forEach(function (c) {
+      var b = el("button", ed.cor === c ? "on" : "");
+      b.style.background = c;
+      b.title = c;
+      b.addEventListener("click", function () {
+        ed.cor = c;
+        co.querySelectorAll("button").forEach(function (x) { x.classList.remove("on"); });
+        b.classList.add("on");
+        atualizarPreview();
+      });
+      co.appendChild(b);
+    });
+
+    $("#ed-cta").value = ed.cta || "";
+    $("#ed-ciudad").value = ed.ciudad || "";
+    $("#ed-direccion").value = ed.direccion || "";
+    $("#ed-whatsapp").value = ed.whatsapp || "";
+    $("#ed-horario").value = ed.horario || "";
+  }
+
+  function atualizarPreview() {
+    var nicho = window.NICHOS[ed.nicho] || {};
+    var ifr = $("#preview");
+    ifr.addEventListener("load", tornarEditavel, { once: true });
+    ifr.srcdoc = Preview.construir(ed.lead, nicho, {
+      modelo: ed.modelo, secoes: ed.secoes, cor: ed.cor, cta: ed.cta,
+      ciudad: ed.ciudad, direccion: ed.direccion, whatsapp: ed.whatsapp,
+      horario: ed.horario, textos: ed.textos
+    });
+  }
+
+  /* clicar num texto da pré-visualização para o editar — como no original */
+  function tornarEditavel() {
+    var ifr = $("#preview"), doc;
+    try { doc = ifr.contentDocument; } catch (e) { return; }
+    if (!doc) return;
+    doc.querySelectorAll("[data-edit]").forEach(function (node) {
+      if (node.tagName === "A") return;
+      node.contentEditable = "true";
+      node.spellcheck = false;
+      node.addEventListener("input", function () {
+        var k = node.getAttribute("data-edit");
+        if (k) ed.textos[k] = node.textContent;
+        marcarSujo();
+      });
+      node.addEventListener("blur", gravarSeNecessario);
+    });
+  }
+
+  function marcarSujo() {
+    var t = $("#ed-estado");
+    if (t) { t.textContent = "Editando…"; t.className = "tag com"; }
+  }
+  function gravarSeNecessario() {
+    var t = $("#ed-estado");
+    if (t) { t.textContent = "Guardado"; t.className = "tag sem"; }
+  }
+
+  document.querySelectorAll("#ed-modelo button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      if (!ed) return;
+      ed.modelo = b.getAttribute("data-modelo");
+      document.querySelectorAll("#ed-modelo button").forEach(function (x) {
+        x.classList.toggle("on", x === b);
+      });
+      atualizarPreview();
+    });
+  });
+
+  [["#ed-cta", "cta"], ["#ed-ciudad", "ciudad"], ["#ed-direccion", "direccion"],
+   ["#ed-whatsapp", "whatsapp"], ["#ed-horario", "horario"]].forEach(function (par) {
+    var inp = $(par[0]);
+    if (!inp) return;
+    inp.addEventListener("input", function () {
+      if (!ed) return;
+      ed[par[1]] = inp.value;
+      marcarSujo();
+      clearTimeout(inp._t);
+      inp._t = setTimeout(function () { atualizarPreview(); gravarSeNecessario(); }, 450);
+    });
+  });
 
   document.querySelectorAll(".lienzo-barra button").forEach(function (b) {
     b.addEventListener("click", function () {
@@ -453,20 +544,40 @@
     });
   });
 
-  $("#btn-vender").addEventListener("click", function () {
-    if (!alvo) return;
-    var prezo = Math.max(0, Number($("#f-prezo").value) || 0);
+  $("#ed-voltar").addEventListener("click", function () { mostrar("resultados"); });
+
+  $("#ed-dominio").addEventListener("click", function () {
+    if (!ed) return;
+    $("#dom-slug").value = ed.slug || slugificar(ed.lead.nombre);
+    mostrar("dominio");
+  });
+
+  // ------------------------------------------------------------------ domínio
+  $("#dom-voltar").addEventListener("click", function () { mostrar("gerar"); });
+
+  $("#dom-publicar").addEventListener("click", function () {
+    if (!ed) return;
+    var slug = slugificar($("#dom-slug").value) || slugificar(ed.lead.nombre);
+    ed.slug = slug;
     var ja = estado.webs.filter(function (w) {
-      return w.lead.nombre === alvo.lead.nombre && w.nicho === alvo.nicho;
+      return w.lead.nombre === ed.lead.nombre && w.nicho === ed.nicho;
     })[0];
-    if (ja) { ja.precio = prezo; ja.vendida = true; ja.data = new Date().toISOString(); }
-    else {
-      estado.webs.unshift({ id: Date.now(), lead: alvo.lead, nicho: alvo.nicho,
-                            precio: prezo, vendida: true, data: new Date().toISOString() });
+    var registo = {
+      id: ja ? ja.id : Date.now(), lead: ed.lead, nicho: ed.nicho,
+      modelo: ed.modelo, secoes: ed.secoes, cor: ed.cor, cta: ed.cta,
+      ciudad: ed.ciudad, direccion: ed.direccion, whatsapp: ed.whatsapp,
+      horario: ed.horario, textos: ed.textos, slug: slug,
+      publicada: true, vendida: ja ? ja.vendida : false,
+      precio: ja ? ja.precio : 0, data: new Date().toISOString()
+    };
+    if (ja) {
+      estado.webs = estado.webs.map(function (w) { return w.id === ja.id ? registo : w; });
+    } else {
+      estado.webs.unshift(registo);
     }
     gravar();
-    mostrar("dashboard");
-    brinde("Vendida por " + prezo + " € · " + alvo.lead.nombre);
+    mostrar("painel");
+    brinde("Publicado en escaparate.es/" + slug);
   });
 
   // ------------------------------------------------------------------- painel
@@ -480,21 +591,37 @@
       var card = el("article", "alvo");
       card.innerHTML =
         '<div class="alvo-topo">' +
-          '<span class="alvo-ic" style="background:' + esc(cor.acento || "#3b82f6") + '">' +
+          '<span class="alvo-ic" style="background:' +
+            esc(w.cor || cor.acento || "#3b82f6") + '">' +
             esc((w.lead.nombre || "?").charAt(0)) + "</span>" +
           "<div><h4>" + esc(w.lead.nombre) + "</h4>" +
-          '<span class="tag sem">Vendida</span></div></div>' +
+          (w.vendida ? '<span class="tag sem">Vendida</span>'
+                     : '<span class="tag com">Publicada</span>') + "</div></div>" +
         '<div class="nota">' + esc(nicho.nombre || w.nicho) + " · " +
-          esc(w.lead.ciudad || "") + " · " + esc(w.precio) + " €</div>" +
-        '<div class="acoes"><button class="bt pequeno" data-ver>Ver web</button>' +
-        '<button class="bt pequeno" data-borrar>Borrar</button></div>';
+          esc(w.ciudad || "") + " · escaparate.es/" + esc(w.slug || "") + "</div>" +
+        '<div class="acoes">' +
+          '<button class="bt pequeno" data-ver>Ver web</button>' +
+          (w.vendida
+            ? '<span class="tag sem">' + esc(w.precio) + " €</span>"
+            : '<input class="mini-input" style="width:74px;padding:6px 8px" type="number" ' +
+              'min="0" step="10" value="450" data-prezo>' +
+              '<button class="bt verde pequeno" data-vender>Vender</button>') +
+          '<button class="bt pequeno" data-borrar>×</button>' +
+        "</div>";
       card.querySelector("[data-ver]").addEventListener("click", function () {
-        abrirGerar(w.lead, w.nicho);
+        abrirEditor(w.lead, w.nicho);
+      });
+      var bv = card.querySelector("[data-vender]");
+      if (bv) bv.addEventListener("click", function () {
+        var prezo = Math.max(0, Number(card.querySelector("[data-prezo]").value) || 0);
+        w.vendida = true; w.precio = prezo;
+        gravar(); renderPainel();
+        brinde("Vendida por " + prezo + " € · " + w.lead.nombre);
       });
       card.querySelector("[data-borrar]").addEventListener("click", function () {
         estado.webs = estado.webs.filter(function (x) { return x.id !== w.id; });
         gravar(); renderPainel();
-        brinde("Quitada de la lista. La web del cliente no se toca.");
+        brinde("Quitada de la lista.");
       });
       cont.appendChild(card);
     });
