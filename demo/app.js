@@ -405,6 +405,7 @@
       estado.recentesAreas = [area].concat(estado.recentesAreas || []).slice(0, 8);
     }
     gravar();
+    renderCidadesLaterais();
 
     // 1) o que já está guardado aparece de imediato
     var alt = nicho ? dadosGuardados(area, nicho) : null;
