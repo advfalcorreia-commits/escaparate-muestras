@@ -421,7 +421,8 @@
 
     var nicho = window.NICHOS[wiz.nicho] || {};
     var sem = d.leads.filter(function (l) { return !l.web; }).length;
-    $("#res-cont").innerHTML = "<b>" + d.leads.length + "</b> leads · " +
+    $("#res-cont").innerHTML = "<b>" + d.leads.length + "</b> " +
+      (d.leads.length === 1 ? "lead · " : "leads · ") +
       "<b>" + sem + "</b> sin web · <b>" + (d.leads.length - sem) + "</b> ya tiene web — " +
       esc(nicho.nombre) + " · " + esc(d.ciudad);
 
@@ -462,7 +463,8 @@
       });
       cont.appendChild(card);
     });
-    $("#res-rodape").textContent = lista.length + " leads encontrados";
+    $("#res-rodape").textContent = lista.length === 1
+      ? "1 lead encontrado" : lista.length + " leads encontrados";
   }
 
   document.querySelectorAll(".filtro").forEach(function (b) {
