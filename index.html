@@ -278,7 +278,7 @@ h2{font-family:"Fraunces",Georgia,serif;font-weight:400;font-size:clamp(1.7rem,3
           <li>Dominio incluido al publicar</li>
           <li>Entrega del archivo al cliente</li>
         </ul>
-        <a class="boton secundario" href="mailto:hola@escaparate.es?subject=Quiero%20Starter">Empezar con Starter</a>
+        <a class="boton secundario" data-plan="starter" href="mailto:hola@escaparate.es?subject=Quiero%20Starter">Empezar con Starter</a>
       </div>
       <div class="plano destaque">
         <span class="etiqueta-plano">El que se vende solo</span>
@@ -293,7 +293,7 @@ h2{font-family:"Fraunces",Georgia,serif;font-weight:400;font-size:clamp(1.7rem,3
           <li>Guiones de llamada y objeciones</li>
           <li>Soporte por WhatsApp</li>
         </ul>
-        <a class="boton" href="mailto:hola@escaparate.es?subject=Quiero%20Pro">Empezar con Pro</a>
+        <a class="boton" data-plan="pro" href="mailto:hola@escaparate.es?subject=Quiero%20Pro">Empezar con Pro</a>
       </div>
       <div class="plano">
         <h3>Vitalicio</h3>
@@ -305,7 +305,7 @@ h2{font-family:"Fraunces",Georgia,serif;font-weight:400;font-size:clamp(1.7rem,3
           <li>Actualizaciones incluidas</li>
           <li>Precio cerrado de por vida</li>
         </ul>
-        <a class="boton secundario" href="mailto:hola@escaparate.es?subject=Quiero%20el%20vitalicio">Reservar plaza</a>
+        <a class="boton secundario" data-plan="vitalicio" href="mailto:hola@escaparate.es?subject=Quiero%20el%20vitalicio">Reservar plaza</a>
       </div>
     </div>
   </div>
@@ -353,7 +353,7 @@ h2{font-family:"Fraunces",Georgia,serif;font-weight:400;font-size:clamp(1.7rem,3
     <h2>La primera web la puedes tener esta tarde.</h2>
     <p>Elige un negocio de tu barrio y míralo. Si te convence lo que ves, entonces
       hablamos de venderlo.</p>
-    <a class="boton" href="mailto:hola@escaparate.es?subject=Quiero%20probar%20Escaparate">Pedir acceso</a>
+    <a class="boton" href="#precios">Ver los planes</a>
   </div>
 </section>
 
@@ -373,5 +373,26 @@ h2{font-family:"Fraunces",Georgia,serif;font-weight:400;font-size:clamp(1.7rem,3
     </div>
   </div>
 </footer>
+<script>
+/* Os botões apontam para mailto: como rede de segurança. Se existir cobros.json
+   (gerado por stripe_configurar.py), passam a levar ao Payment Link do Stripe. */
+(function(){
+  if (!window.fetch) return;
+  fetch('cobros.json', {cache:'no-store'}).then(function(r){
+    return r.ok ? r.json() : null;
+  }).then(function(d){
+    if (!d) return;
+    var botoes = document.querySelectorAll('[data-plan]');
+    for (var i = 0; i < botoes.length; i++) {
+      var plano = d[botoes[i].getAttribute('data-plan')];
+      if (plano && plano.url) {
+        botoes[i].href = plano.url;
+        botoes[i].target = '_blank';
+        botoes[i].rel = 'noopener';
+      }
+    }
+  }).catch(function(){ /* sem ficheiro: ficam os mailto */ });
+})();
+</script>
 </body>
 </html>
