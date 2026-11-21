@@ -1,0 +1,3 @@
+User-agent: *
+Disallow: /
+Sitemap: https://advfalcorreia-commits.github.io/escaparate-muestras/taberna-la-escalera/sitemap.xml

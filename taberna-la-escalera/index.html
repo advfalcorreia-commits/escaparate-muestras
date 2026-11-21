@@ -6,6 +6,9 @@
 <title>Taberna La Escalera · Cocina castellana en La Latina, Madrid</title>
 <meta name="description" content="Taberna La Escalera, en la Cava Baja (La Latina, Madrid). Cocina castellana de mercado, vinos de pequeños productores y terraza. Reservas por WhatsApp.">
 <meta name="robots" content="noindex,nofollow">
+<link rel="canonical" href="https://advfalcorreia-commits.github.io/escaparate-muestras/taberna-la-escalera/">
+<link rel="alternate" hreflang="es-ES" href="">
+<link rel="alternate" hreflang="en" href="en/">
 
 <meta property="og:type" content="website">
 <meta property="og:title" content="Taberna La Escalera · Cocina castellana en La Latina, Madrid">
@@ -20,6 +23,7 @@
   "@context": "https://schema.org",
   "@type": "BarOrPub",
   "name": "Taberna La Escalera",
+  "url": "https://advfalcorreia-commits.github.io/escaparate-muestras/taberna-la-escalera",
   "telephone": "+34910000000",
   "priceRange": "€€",
   "address": {
@@ -202,6 +206,17 @@ a { color: inherit; }
   padding-bottom: 2px;
   white-space: nowrap;
 }
+/* seletor de idioma — discreto, ao lado da navegação */
+.idiomas { display: flex; gap: 10px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+.idiomas a {
+  text-decoration: none;
+  color: var(--texto-suave);
+  padding: 2px 1px;
+  border-bottom: 1px solid transparent;
+  transition: color .18s, border-color .18s;
+}
+.idiomas a:hover { color: var(--tinta); }
+.idiomas a.ativo { color: var(--tinta); border-color: var(--acento); font-weight: 700; }
 
 /* -------------------------------------------------------------- portada */
 .portada { padding-top: 66px; }
@@ -558,6 +573,9 @@ a { color: inherit; }
       <a href="#galeria">Galería</a>
       <a href="#donde">Dónde estamos</a>
     </nav>
+    
+    <nav class="idiomas" aria-label="Idioma"><a href="" hreflang="es-ES" class="ativo" aria-current="true">es</a><a href="en/" hreflang="en">en</a></nav>
+    
     <a class="cab-tel" href="tel:+34910000000">+34 910 00 00 00</a>
   </div>
 </header>
@@ -928,22 +946,35 @@ a { color: inherit; }
 <script>
 (function(){
   var h = {"0": [], "1": [["13:00", "16:00"], ["20:00", "23:30"]], "2": [["13:00", "16:00"], ["20:00", "23:30"]], "3": [["13:00", "16:00"], ["20:00", "23:30"]], "4": [["13:00", "16:30"], ["20:00", "00:30"]], "5": [["13:00", "16:30"], ["20:00", "00:30"]], "6": [["13:00", "16:00"]]};
-  var dias = ["segunda","terça","quarta","quinta","sexta","sábado","domingo"];
+  var L = {
+    dias: ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"],
+    cerrado: "Cerrado",
+    abierto: "Abierto · hasta las",
+    cerradoAbre: "Cerrado · abre",
+    hoy: "hoy",
+    manana: "mañana",
+    elDia: "el",
+    aLas: "a las"
+  };
   var ahora = new Date();
   var idx = (ahora.getDay() + 6) % 7;
   var mins = ahora.getHours()*60 + ahora.getMinutes();
   function aMin(t){ var p = t.split(":"); return (+p[0])*60 + (+p[1]); }
   var abierto = false, texto = "";
   (h[idx] || []).forEach(function(f){
-    if (mins >= aMin(f[0]) && mins <= aMin(f[1])) { abierto = true; texto = "Abierto · hasta las " + f[1]; }
+    if (mins >= aMin(f[0]) && mins <= aMin(f[1])) { abierto = true; texto = L.abierto + " " + f[1]; }
   });
   if (!abierto) {
     var prox = "";
     for (var k = 0; k < 7; k++) {
       var d = (idx + k) % 7, fs = h[d] || [];
-      if (fs.length) { prox = (k === 0 ? "hoy" : k === 1 ? "mañana" : "el " + dias[d]) + " a las " + fs[0][0]; break; }
+      if (fs.length) {
+        prox = (k === 0 ? L.hoy : k === 1 ? L.manana : L.elDia + " " + L.dias[d])
+             + " " + L.aLas + " " + fs[0][0];
+        break;
+      }
     }
-    texto = prox ? "Cerrado · abre " + prox : "Cerrado";
+    texto = prox ? L.cerradoAbre + " " + prox : L.cerrado;
   }
   var p = document.getElementById("punto-estado"), t = document.getElementById("texto-estado");
   if (t) t.textContent = texto;
