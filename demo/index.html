@@ -347,6 +347,19 @@ h1,h2{font-weight:700}
 .vazio-grande h3{font-size:15px;margin:0 0 6px}
 .vazio-grande p{font-size:12.5px;color:var(--suave);margin:0;line-height:1.5}
 
+
+.barra-viva{display:flex;gap:8px;margin:0 0 8px}
+.barra-viva input{flex:1;font:400 15px "Karla",sans-serif;padding:12px 15px;border-radius:12px;
+  border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.28);color:var(--texto)}
+.barra-viva input:focus{outline:2px solid rgba(59,130,246,.6);outline-offset:-1px}
+.zona-viva{font-size:12.5px;color:var(--suave);margin:0 0 14px}
+.zona-viva b{color:var(--texto)}
+.carregando{display:flex;align-items:center;gap:10px;color:var(--suave);font-size:13.5px;padding:26px 0}
+.carregando i{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.2);
+  border-top-color:#3b82f6;animation:gira .8s linear infinite;display:inline-block}
+@keyframes gira{to{transform:rotate(360deg)}}
+.mais{display:block;margin:16px auto 0}
+
 /* brinde */
 .brinde{position:fixed;left:50%;bottom:96px;transform:translate(-50%,16px);opacity:0;pointer-events:none;
   background:rgba(11,18,35,.96);border:1px solid var(--borda);color:var(--texto);font-size:13.5px;
@@ -461,6 +474,11 @@ h1,h2{font-weight:700}
             </div>
           </div>
           <div id="busca-resultados" hidden>
+            <div class="barra-viva">
+              <input id="vivo-texto" placeholder="Busca: abogados, peluquería, bar…" autocomplete="off">
+              <button class="bt pequeno" id="vivo-cerca" title="Usar a minha localização">📍 Cerca de mí</button>
+            </div>
+            <p class="zona-viva" id="vivo-zona"></p>
             <div class="filtros">
               <span class="cont" id="res-cont"></span>
               <button class="filtro on" data-filtro="sem">Sem site</button>
@@ -636,6 +654,7 @@ h1,h2{font-weight:700}
 <script src="leads.js"></script>
 <script src="cidades.js"></script>
 <script src="globo.js"></script>
+<script src="vivo.js"></script>
 <script src="preview.js"></script>
 <script src="app.js"></script>
 </body>

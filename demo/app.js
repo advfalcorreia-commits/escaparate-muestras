@@ -38,6 +38,11 @@
     try { localStorage.setItem(CHAVE, JSON.stringify(estado)); } catch (e) {}
   }
   function esc(s) { return Preview.esc(s); }
+  /* sem acentos: ninguém escreve «Peluquería» com í numa barra de busca */
+  function norm(s) {
+    return String(s == null ? "" : s).toLowerCase().normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  }
   function slugificar(s) {
     return String(s || "").toLowerCase().normalize("NFD")
       .replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-")
@@ -185,26 +190,18 @@
     svg.innerHTML = out;
   }
 
-  // ------------------------------------------------------------- busca: modal
-  var cidades = {};   // ciudad -> {n: leads, nichos: Set}
-  (function indexar() {
-    Object.keys(window.LEADS || {}).forEach(function (k) {
-      var d = window.LEADS[k];
-      if (!cidades[d.ciudad]) cidades[d.ciudad] = { n: 0, nichos: {} };
-      cidades[d.ciudad].n += d.leads.length;
-      cidades[d.ciudad].nichos[d.nicho] = 1;
-    });
-  })();
-  var listaCidades = Object.keys(cidades).sort(function (a, b) { return a.localeCompare(b, "es"); });
-
-  var MAX_BUSCAS = 8;
+  // ================================================================= BUSCA
+  // Estado da busca ao vivo. `area` vem do Photon (nome + bbox), `nicho` do
+  // catálogo, `texto` do que se escreve na barra.
+  var area = null, nicho = null, texto = "", resultados = [], filtroAtual = "sem";
+  var MAX_BUSCAS = 30;
   var buscasHoje = estado.buscasHoje || 0;
+  var seqBusca = 0;
 
   function abrirModal(passo) {
-    wiz = passo === 1 ? { pais: null, ciudad: null, nicho: null } : wiz;
     $("#modal-busca").hidden = false;
     document.body.style.overflow = "hidden";
-    renderModal(passo, 1);
+    renderModal(passo);
   }
   function fecharModal() {
     $("#modal-busca").hidden = true;
@@ -224,213 +221,260 @@
     $("#mb-passo").textContent = "Paso " + n + " de 3";
     var campo = $("#mb-campo");
     var mig = $("#mb-migalhas");
-    mig.innerHTML = '<span class="bc pais">Portugal</span>';
-    if (wiz.ciudad) mig.innerHTML = '<span class="bc pais">Portugal</span>' +
-      '<span class="bc">📍 <b>' + esc(wiz.ciudad) + "</b></span>";
-    if (wiz.nicho) mig.innerHTML = '<span class="bc pais">Portugal</span>' +
-      '<span class="bc">📍 <b>' + esc(wiz.ciudad) + "</b></span>" +
-      '<span class="bc"><b>' + esc((window.NICHOS[wiz.nicho] || {}).nombre || wiz.nicho) + "</b></span>";
+    var partes = [];
+    if (area) partes.push('<span class="bc pais">España</span>' +
+      '<span class="bc">📍 <b>' + esc(area.nombre) + "</b></span>");
+    if (nicho) partes.push('<span class="bc"><b>' +
+      esc((window.NICHOS[nicho] || {}).nombre || nicho) + "</b></span>");
+    mig.innerHTML = partes.join("");
     $("#mb-contador").textContent = buscasHoje + "/" + MAX_BUSCAS + " búsquedas hoy";
 
     if (n === 1) {
-      $("#mb-pergunta").textContent = "¿Qué país?";
-      $("#mb-dica").textContent = "De momento trabajamos solo en España.";
-      campo.innerHTML = '<div class="pais-lista">' +
-        '<div class="pais" data-pais="ES">🇪🇸 España</div>' +
-        '<div class="pais off">🇵🇹 Portugal <small style="color:var(--suave)">pronto</small></div>' +
-        '<div class="pais off">🇫🇷 Francia <small style="color:var(--suave)">pronto</small></div></div>';
-      campo.querySelector("[data-pais]").addEventListener("click", function () {
-        wiz.pais = "ES"; renderModal(2, 2);
+      $("#mb-pergunta").textContent = "¿Dónde buscas?";
+      $("#mb-dica").textContent = "Escribe una ciudad o un barrio: Madrid, Centro, Salamanca…";
+      campo.innerHTML =
+        '<div class="autocomp"><div class="campo" style="margin:0">' +
+        '<input id="mb-lugar" placeholder="Ej: Madrid · Centro" autocomplete="off"></div>' +
+        '<div class="resultados" id="mb-sug" hidden></div></div>' +
+        '<button class="bt" id="mb-cerca" style="width:100%;margin-top:10px">📍 Cerca de mí</button>' +
+        '<div class="chips" id="mb-recentes"></div>';
+      ligarLugares($("#mb-lugar"), $("#mb-sug"), function (l) {
+        area = l;
+        renderModal(2);
       });
+      ligarCercaDeMi($("#mb-cerca"));
+      var rec = $("#mb-recentes");
+      (estado.recentesAreas || []).slice(0, 5).forEach(function (r) {
+        var b = el("button", "chip", "📍 " + esc(r.nombre));
+        b.addEventListener("click", function () { area = r; renderModal(2); });
+        rec.appendChild(b);
+      });
+      $("#mb-lugar").focus();
     }
 
     if (n === 2) {
-      $("#mb-pergunta").textContent = "¿Qué ciudad?";
-      $("#mb-dica").textContent = "Escribe y elige de la lista — o elige una de tus ciudades recientes.";
+      $("#mb-pergunta").textContent = "¿Qué buscas?";
+      $("#mb-dica").textContent = "Un nicho del catálogo o lo que se te ocurra: «abogados», «bar»…";
       campo.innerHTML =
-        '<div class="autocomp"><div class="campo" style="margin:0">' +
-        '<input id="mb-cidade" placeholder="Ej: Campinas" autocomplete="off">' +
-        '</div><div class="resultados" id="mb-sug" hidden></div></div>' +
-        '<div class="chips" id="mb-recentes"></div>';
-      var inp = $("#mb-cidade"), sug = $("#mb-sug");
-
-      function pintarSug(q) {
-        var achadas = listaCidades.filter(function (c) {
-          return !q || c.toLowerCase().indexOf(q.toLowerCase()) >= 0;
-        }).slice(0, 7);
-        if (!achadas.length) {
-          sug.innerHTML = '<div class="nada">Ninguna ciudad encontrada con ese nombre. Prueba otra.</div>';
-        } else {
-          sug.innerHTML = achadas.map(function (c) {
-            var co = (window.CIDADES || {})[c];
-            return '<div class="res" data-cidade="' + esc(c) + '"><span>' + esc(c) +
-              "</span><small>" + (co
-                ? Math.abs(co[0]).toFixed(4) + " / " + Math.abs(co[1]).toFixed(4)
-                : cidades[c].n + " negocios") + "</small></div>";
-          }).join("");
-        }
-        sug.hidden = false;
-        sug.querySelectorAll("[data-cidade]").forEach(function (d) {
-          d.addEventListener("click", function () { escolherCidade(d.getAttribute("data-cidade")); });
-        });
-      }
-      inp.addEventListener("focus", function () { pintarSug(inp.value); });
-      inp.addEventListener("input", function () { pintarSug(inp.value); });
-
-      var rec = $("#mb-recentes");
-      (estado.recentes || []).slice(0, 5).forEach(function (c) {
-        var b = el("button", "chip", "📍 " + esc(c));
-        b.addEventListener("click", function () { escolherCidade(c); });
-        rec.appendChild(b);
-      });
-      if (!rec.children.length) {
-        listaCidades.slice(0, 6).forEach(function (c) {
-          var b = el("button", "chip", esc(c));
-          b.addEventListener("click", function () { escolherCidade(c); });
-          rec.appendChild(b);
-        });
-      }
-      inp.focus();
-    }
-
-    if (n === 3) {
-      $("#mb-pergunta").textContent = "¿Qué nicho?";
-      $("#mb-dica").textContent = "Cada nicho trae su paleta y sus etiquetas.";
-      campo.innerHTML = '<div class="campo"><input id="mb-filtro" placeholder="Filtrar nichos…" ' +
-        'autocomplete="off"></div><div class="nichos-grade" id="mb-nichos"></div>' +
+        '<div class="campo"><input id="mb-filtro" placeholder="Filtrar nichos…" autocomplete="off"></div>' +
+        '<div class="nichos-grade" id="mb-nichos"></div>' +
         '<button class="bt verde" id="mb-buscar" style="width:100%;margin-top:14px">Buscar leads</button>';
-      pintarNichosModal(nichosDa(wiz.ciudad), "");
+      pintarNichosModal("");
       $("#mb-filtro").addEventListener("input", function (e) {
-        pintarNichosModal(nichosDa(wiz.ciudad), e.target.value.trim().toLowerCase());
+        pintarNichosModal(e.target.value.trim());
       });
-      $("#mb-buscar").addEventListener("click", function () {
-        if (!wiz.nicho) { brinde("Elige un nicho primero."); return; }
-        fecharModal();
-        varrer();
+      $("#mb-filtro").addEventListener("keydown", function (e) {
+        if (e.key === "Enter") { texto = $("#mb-filtro").value.trim(); nicho = null; buscar(); }
       });
+      $("#mb-buscar").addEventListener("click", buscar);
     }
 
-    // globo do modal
     var cv = document.getElementById("globo");
     Globo.montar(cv);
-    if (wiz.ciudad && window.CIDADES && window.CIDADES[wiz.ciudad]) {
-      Globo.marcar(window.CIDADES[wiz.ciudad][0], window.CIDADES[wiz.ciudad][1]);
-      $("#globo-coords").textContent = latlon(wiz.ciudad);
+    if (area && area.lat != null) {
+      Globo.marcar(area.lat, area.lon);
+      $("#globo-coords").textContent = "LAT " + Math.abs(area.lat).toFixed(4) + "° " +
+        (area.lat < 0 ? "S" : "N") + " · LON " + Math.abs(area.lon).toFixed(4) + "° " +
+        (area.lon < 0 ? "O" : "E");
     } else {
       Globo.marcar(null, null);
       $("#globo-coords").textContent = "— · —";
     }
   }
 
-  function nichosDa(ciudad) {
-    var cont = {};
-    Object.keys(window.LEADS || {}).forEach(function (k) {
-      var d = window.LEADS[k];
-      if (d.ciudad === ciudad) cont[d.nicho] = d.leads.length;
+  /* autocomplete de lugar com Photon, à medida que se escreve */
+  function ligarLugares(inp, sug, escolher) {
+    var t;
+    function pintar(texto_) {
+      if (!texto_ || texto_.length < 2) { sug.hidden = true; return; }
+      sug.innerHTML = '<div class="nada">Buscando…</div>';
+      sug.hidden = false;
+      Vivo.lugares(texto_, function (err, lista) {
+        if (err || !lista.length) {
+          sug.innerHTML = '<div class="nada">Ningún lugar encontrado. Prueba con ' +
+            '«Madrid», «Sevilla» o un barrio.</div>';
+          return;
+        }
+        sug.innerHTML = lista.map(function (l, i) {
+          return '<div class="res" data-i="' + i + '"><span>' + esc(l.nombre) +
+            (l.contexto ? ' <small style="opacity:.6">· ' + esc(l.contexto) + "</small>" : "") +
+            "</span><small>" + esc(l.tipo) + " · " +
+            Math.abs(l.lat).toFixed(3) + " / " + Math.abs(l.lon).toFixed(3) + "</small></div>";
+        }).join("");
+        sug.querySelectorAll("[data-i]").forEach(function (d) {
+          d.addEventListener("click", function () { escolher(lista[+d.getAttribute("data-i")]); });
+        });
+      });
+    }
+    inp.addEventListener("input", function () {
+      clearTimeout(t);
+      t = setTimeout(function () { pintar(inp.value.trim()); }, 320);
     });
-    return cont;
+    inp.addEventListener("focus", function () { if (inp.value.trim().length >= 2) pintar(inp.value.trim()); });
   }
 
-  function pintarNichosModal(disp, filtro) {
+  function ligarCercaDeMi(botao) {
+    botao.addEventListener("click", function () {
+      if (!navigator.geolocation) { brinde("Este navegador no da la ubicación."); return; }
+      botao.textContent = "Buscando tu ubicación…";
+      navigator.geolocation.getCurrentPosition(function (pos) {
+        area = {
+          nombre: "Cerca de mí",
+          lat: pos.coords.latitude, lon: pos.coords.longitude,
+          bbox: [pos.coords.latitude - 0.02, pos.coords.longitude - 0.03,
+                 pos.coords.latitude + 0.02, pos.coords.longitude + 0.03]
+        };
+        renderModal(2);
+      }, function () {
+        botao.textContent = "📍 Cerca de mí";
+        brinde("Sin permiso de ubicación. Escribe la zona a mano.");
+      }, { timeout: 8000 });
+    });
+  }
+
+  function pintarNichosModal(filtro) {
     var grade = $("#mb-nichos");
     if (!grade) return;
     grade.innerHTML = "";
-    var nomes = function (n) { return (window.NICHOS[n] || {}).nombre || n; };
-    Object.keys(disp).sort(function (a, b) {
-      return nomes(a).localeCompare(nomes(b), "es");
-    }).forEach(function (n) {
-      var nome = nomes(n);
-      if (filtro && nome.toLowerCase().indexOf(filtro) < 0) return;
-      var cor = (window.NICHOS[n] || {}).colores || {};
+    Object.keys(window.NICHOS).sort(function (a, b) {
+      return window.NICHOS[a].nombre.localeCompare(window.NICHOS[b].nombre, "es");
+    }).forEach(function (slug) {
+      var n = window.NICHOS[slug];
+      if (filtro && norm(n.nombre).indexOf(norm(filtro)) < 0) return;
+      var cor = n.colores || {};
       var b = el("button", "nicho-item",
         '<span class="ic" style="background:' + esc(cor.acento || "#3b82f6") + '">' +
-        esc(nome.charAt(0)) + "</span><span>" + esc(nome) +
-        ' <small style="color:var(--suave)">' + disp[n] + "</small></span>");
-      if (wiz.nicho === n) b.style.borderColor = "rgba(96,165,250,.7)";
+        esc(n.nombre.charAt(0)) + "</span><span>" + esc(n.nombre) + "</span>");
+      if (nicho === slug) b.style.borderColor = "rgba(96,165,250,.7)";
       b.addEventListener("click", function () {
-        wiz.nicho = n;
-        grade.querySelectorAll(".nicho-item").forEach(function (x) {
-          x.style.borderColor = "";
-        });
-        b.style.borderColor = "rgba(96,165,250,.7)";
+        nicho = slug;
+        texto = "";
+        buscar();
       });
       grade.appendChild(b);
     });
   }
 
-  function escolherCidade(c) {
-    wiz.ciudad = c; wiz.nicho = null;
-    if (estado.recentes.indexOf(c) < 0) estado.recentes.unshift(c);
-    estado.recentes = estado.recentes.slice(0, 6);
-    gravar();
-    renderModal(3, 3);
-  }
-
-  $("#mb-voltar").addEventListener("click", function () {
-    var n = ["p1", "p2", "p3"].filter(function (id) {
-      return document.getElementById(id).classList.contains("on");
-    }).length;
-    if (n <= 1) { fecharModal(); return; }
-    renderModal(n - 1, n - 1);
-  });
-
-  function latlon(cidade) {
-    var c = (window.CIDADES || {})[cidade];
-    if (!c) return "— · —";
-    return "LAT " + Math.abs(c[0]).toFixed(4) + "° " + (c[0] < 0 ? "S" : "N") +
-      " · LON " + Math.abs(c[1]).toFixed(4) + "° " + (c[1] < 0 ? "O" : "E");
-  }
-
-  // ------------------------------------------------------------- varrimento
-  function varrer() {
-    buscasHoje++;
-    estado.buscasHoje = buscasHoje;
-    gravar();
-    var sc = $("#scanner");
-    sc.hidden = false;
-    $("#scanner-titulo").textContent = "Varrendo " + wiz.ciudad + "…";
-    $("#scanner-coords").textContent = latlon(wiz.ciudad);
-    var cv = document.getElementById("globo-scan");
-    Globo.montar(cv);
-    if (window.CIDADES && window.CIDADES[wiz.ciudad]) {
-      Globo.marcar(window.CIDADES[wiz.ciudad][0], window.CIDADES[wiz.ciudad][1]);
+  // ------------------------------------------------------------ executar
+  /* A amostra guardada usa rótulos como «Madrid · Centro»; o Photon devolve
+     «Centro» com contexto «Madrid · …». Tentam-se as combinações. */
+  function dadosGuardados(a, n) {
+    var L = window.LEADS || {};
+    var cidade = (a.contexto || "").split(" · ")[0];
+    var tentativas = [
+      a.nombre + "|" + n,
+      cidade + " · " + a.nombre + "|" + n,
+      a.nombre + " · " + cidade + "|" + n,
+      cidade + "|" + n
+    ];
+    for (var i = 0; i < tentativas.length; i++) {
+      if (L[tentativas[i]] && L[tentativas[i]].leads.length) return L[tentativas[i]];
     }
-    setTimeout(function () {
-      sc.hidden = true;
-      Globo.parar();
-      mostrar("buscar");
-      aplicarBusca(true);
-    }, 1900);
+    return null;
   }
 
-  // ---------------------------------------------------------------- resultados
-  var filtroAtual = "sem";
-  var resultadoAtual = null;
+  /* texto livre: procura pelo nome do negócio dentro da zona, nos dados guardados */
+  function guardadosPorTexto(a, txt) {
+    var L = window.LEADS || {};
+    var cidade = (a.contexto || "").split(" · ")[0];
+    var alvo = norm(txt), out = [], vistos = {};
+    Object.keys(L).forEach(function (k) {
+      var d = L[k];
+      var pertence = d.ciudad === a.nombre || d.ciudad === cidade ||
+        d.ciudad.indexOf(a.nombre) >= 0 || d.ciudad.indexOf(cidade) >= 0;
+      if (!pertence) return;
+      (d.leads || []).forEach(function (l) {
+        var nome = norm(l.nombre);
+        if (nome.indexOf(alvo) >= 0 && !vistos[nome]) { vistos[nome] = 1; out.push(l); }
+      });
+    });
+    return out;
+  }
 
-  function aplicarBusca(reset) {
-    var d = (window.LEADS || {})[wiz.ciudad + "|" + wiz.nicho];
-    resultadoAtual = d || null;
-    if (reset) filtroAtual = "sem";
-    if (!d) {
-      $("#busca-vazia").hidden = false;
-      $("#busca-resultados").hidden = true;
-      return;
-    }
+  function buscar() {
+    if (!area) { brinde("Elige primero la zona."); return; }
+    if (!nicho && texto.length < 3) { brinde("Elige un nicho o escribe al menos 3 letras."); return; }
+    fecharModal();
+    mostrar("buscar");
     $("#busca-vazia").hidden = true;
     $("#busca-resultados").hidden = false;
 
-    var nicho = window.NICHOS[wiz.nicho] || {};
-    var sem = d.leads.filter(function (l) { return !l.web; }).length;
-    $("#res-cont").innerHTML = "<b>" + d.leads.length + "</b> " +
-      (d.leads.length === 1 ? "lead · " : "leads · ") +
-      "<b>" + sem + "</b> sin web · <b>" + (d.leads.length - sem) + "</b> ya tiene web — " +
-      esc(nicho.nombre) + " · " + esc(d.ciudad);
+    buscasHoje++;
+    estado.buscasHoje = buscasHoje;
+    if (!(estado.recentesAreas || []).some(function (r) { return r.nombre === area.nombre; })) {
+      estado.recentesAreas = [area].concat(estado.recentesAreas || []).slice(0, 8);
+    }
+    gravar();
+
+    // 1) o que já está guardado aparece de imediato
+    var alt = nicho ? dadosGuardados(area, nicho) : null;
+    var listaGuardada = alt && alt.leads && alt.leads.length
+      ? alt.leads
+      : (!nicho && texto.length >= 3 ? guardadosPorTexto(area, texto) : null);
+    if (listaGuardada && listaGuardada.length) {
+      resultados = listaGuardada;
+      renderResultados();
+      fuente("guardado");
+    } else {
+      resultados = [];
+      $("#res-cont").textContent = "";
+      $("#vivo-zona").innerHTML = "<b>" + esc(area.nombre) + "</b>";
+      $("#alvos").innerHTML = '<div class="carregando"><i></i> Consultando OpenStreetMap…</div>';
+      $("#res-rodape").textContent = "";
+      fuente("consultando");
+    }
+
+    // 2) consulta ao vivo; quando chega, substitui
+    var meu = ++seqBusca;
+    var tags = nicho ? (window.NICHOS[nicho].osm || []) : null;
+    Vivo.negocios(area, tags, texto, function (err, lista) {
+      if (meu !== seqBusca) return;
+      if (err) {
+        if (!resultados.length) {
+          $("#alvos").innerHTML = '<div class="vazio">OpenStreetMap no responde ahora mismo ' +
+            '(es un servicio voluntario y está saturado). Vuelve a intentarlo en un minuto.</div>';
+          fuente("erro");
+        } else {
+          fuente("guardado", true);
+        }
+        return;
+      }
+      resultados = lista;
+      renderResultados();
+      fuente("vivo");
+    }, 400, resultados.length === 0);
+  }
+
+  /* indica de onde vieram os dados — é informação, não decoração */
+  function fuente(tipo, forcar) {
+    var el = $("#vivo-zona");
+    var base = "<b>" + esc(area ? area.nombre : "") + "</b> · " +
+      esc(nicho ? ((window.NICHOS[nicho] || {}).nombre || nicho) : ("«" + texto + "»"));
+    var etiqueta = "";
+    if (tipo === "vivo") etiqueta = ' <span class="pill ok">en vivo · OpenStreetMap</span>';
+    else if (tipo === "guardado") {
+      etiqueta = forcar
+        ? ' <span class="pill aviso">OSM saturado · datos guardados</span>'
+        : ' <span class="pill">datos guardados</span>';
+    } else if (tipo === "consultando") etiqueta = ' <span class="pill">consultando…</span>';
+    else etiqueta = ' <span class="pill aviso">sin conexión con OSM</span>';
+    el.innerHTML = base + etiqueta;
+  }
+
+  function renderResultados() {
+    var nombreNicho = nicho ? (window.NICHOS[nicho].nombre || nicho) : ("«" + texto + "»");
+    var conWeb = resultados.filter(function (l) { return l.web; }).length;
+    var sinWeb = resultados.length - conWeb;
+
+    $("#res-cont").innerHTML = "<b>" + resultados.length + "</b> " +
+      (resultados.length === 1 ? "leads" : "leads") + " · <b>" + sinWeb + "</b> sin web · <b>" +
+      conWeb + "</b> ya tiene web";
 
     document.querySelectorAll(".filtro").forEach(function (b) {
       b.classList.toggle("on", b.getAttribute("data-filtro") === filtroAtual);
     });
 
-    var lista = d.leads.filter(function (l) {
+    var lista = resultados.filter(function (l) {
       if (filtroAtual === "sem") return !l.web;
       if (filtroAtual === "com") return !!l.web;
       return true;
@@ -438,61 +482,100 @@
 
     var cont = $("#alvos");
     cont.innerHTML = "";
-    lista.forEach(function (l) {
-      var cor = nicho.colores || {};
-      var card = el("article", "alvo");
-      card.innerHTML =
-        '<div class="alvo-topo">' +
-          '<span class="alvo-ic" style="background:' + esc(cor.acento || "#3b82f6") + '">' +
-            esc((l.nombre || "?").charAt(0).toUpperCase()) + "</span>" +
-          "<div><h4>" + esc(l.nombre) + "</h4>" +
-          (l.web ? '<span class="tag com">Ya tiene web</span>'
-                 : '<span class="tag sem">Sin web</span>') + "</div></div>" +
-        '<div class="nota">' + (l.telefono ? "☎ " + esc(l.telefono) : "sin teléfono") +
-          (l.direccion ? " · " + esc(l.direccion) : "") + "</div>" +
-        '<div class="acoes">' +
-          (l.web ? '<a class="mini" title="Su web" href="' + esc(l.web) +
-            '" target="_blank" rel="noopener">' + SVG.web + "</a>" : "") +
-          (l.telefono ? '<a class="mini" title="Llamar" href="tel:' +
-            esc(l.telefono.replace(/[^\d+]/g, "")) + '">' + SVG.tel + "</a>" : "") +
-          (l.telefono ? '<span class="mini" title="WhatsApp">' + SVG.wsp + "</span>" : "") +
-          '<button class="bt verde pequeno">⚡ Generar sitio</button>' +
-        "</div>";
-      card.querySelector(".bt").addEventListener("click", function () {
-        animarGerando(l, wiz.nicho);
-      });
-      cont.appendChild(card);
+    if (!lista.length) {
+      cont.innerHTML = '<div class="vazio">Ningún negocio con ese filtro. ' +
+        'Prueba «Todos» o cambia de nicho.</div>';
+      $("#res-rodape").textContent = "";
+      return;
+    }
+    lista.slice(0, 120).forEach(function (l) { cont.appendChild(tarjeta(l)); });
+    $("#res-rodape").textContent = lista.length + (lista.length === 1
+      ? " lead encontrado" : " leads encontrados") +
+      (lista.length > 120 ? " · mostrando 120" : "");
+  }
+
+  function tarjeta(l) {
+    var nichoSlug = l.nicho || nicho;
+    var n = window.NICHOS[nichoSlug] || {};
+    var cor = (n.colores || {}).acento || "#3b82f6";
+    var card = el("article", "alvo");
+    card.innerHTML =
+      '<div class="alvo-topo">' +
+        '<span class="alvo-ic" style="background:' + esc(cor) + '">' +
+          esc((l.nombre || "?").charAt(0).toUpperCase()) + "</span>" +
+        "<div><h4>" + esc(l.nombre) + "</h4>" +
+        (l.web ? '<span class="tag com">Ya tiene web</span>'
+               : '<span class="tag sem">Sin web</span>') + "</div></div>" +
+      '<div class="nota">' + (l.telefono ? "☎ " + esc(l.telefono) : "sin teléfono") +
+        (l.direccion ? " · " + esc(l.direccion) : "") + "</div>" +
+      '<div class="acoes">' +
+        (l.web ? '<a class="mini" title="Su web" href="' + esc(l.web) +
+          '" target="_blank" rel="noopener">' + SVG.web + "</a>" : "") +
+        (l.telefono ? '<a class="mini" title="Llamar" href="tel:' +
+          esc(l.telefono.replace(/[^\d+]/g, "")) + '">' + SVG.tel + "</a>" : "") +
+        (l.telefono ? '<span class="mini" title="WhatsApp">' + SVG.wsp + "</span>" : "") +
+        '<button class="bt verde pequeno">⚡ Generar sitio</button>' +
+      "</div>";
+    card.querySelector(".bt").addEventListener("click", function () {
+      animarGerando(l, nichoSlug);
     });
-    $("#res-rodape").textContent = lista.length === 1
-      ? "1 lead encontrado" : lista.length + " leads encontrados";
+    return card;
   }
 
   document.querySelectorAll(".filtro").forEach(function (b) {
     b.addEventListener("click", function () {
       filtroAtual = b.getAttribute("data-filtro");
-      aplicarBusca(false);
+      renderResultados();
     });
   });
 
+  // barra de busca ao vivo, dentro dos resultados
+  (function () {
+    var inp = $("#vivo-texto");
+    if (!inp) return;
+    var t;
+    inp.addEventListener("input", function () {
+      clearTimeout(t);
+      var v = inp.value.trim();
+      t = setTimeout(function () {
+        if (!area) {
+          if (v.length >= 3) { abrirModal(1); }
+          return;
+        }
+        if (v.length < 3) return;
+        nicho = null; texto = v;
+        buscar();
+      }, 550);
+    });
+  })();
+
+  $("#vivo-cerca").addEventListener("click", function () {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      area = {
+        nombre: "Cerca de mí",
+        lat: pos.coords.latitude, lon: pos.coords.longitude,
+        bbox: [pos.coords.latitude - 0.02, pos.coords.longitude - 0.03,
+               pos.coords.latitude + 0.02, pos.coords.longitude + 0.03]
+      };
+      if (nicho || texto.length >= 3) buscar();
+      else abrirModal(2);
+    }, function () { brinde("Sin permiso de ubicación."); });
+  });
+
+  // cidades recentes na barra lateral
   function renderCidadesLaterais() {
     var ul = $("#cidades-lista");
     if (!ul) return;
     ul.innerHTML = "";
-    var recentes = (estado.recentes || []).slice();
-    listaCidades.forEach(function (c) { if (recentes.indexOf(c) < 0) recentes.push(c); });
-    $("#cidades-vazio").hidden = recentes.length > 0;
-    recentes.slice(0, 12).forEach(function (c) {
+    var rec = estado.recentesAreas || [];
+    $("#cidades-vazio").hidden = rec.length > 0;
+    rec.forEach(function (r) {
       var li = el("li");
-      var nichos = Object.keys(cidades[c].nichos).slice(0, 3);
-      li.innerHTML = '<div><span class="cid">' + esc(c) + '</span>' +
-        '<span class="quando">' + cidades[c].n + "</span></div>" +
-        '<div class="chips-mini">' + nichos.map(function (n) {
-          return "<span>" + esc((window.NICHOS[n] || {}).nombre || n) + "</span>";
-        }).join("") + "</div>";
-      li.addEventListener("click", function () {
-        wiz.ciudad = c; wiz.nicho = null;
-        abrirModal(3);
-      });
+      li.innerHTML = '<div><span class="cid">' + esc(r.nombre) + "</span></div>" +
+        '<div class="chips-mini"><span>' +
+        (r.bbox ? "zona" : "radio") + "</span></div>";
+      li.addEventListener("click", function () { area = r; abrirModal(2); });
       ul.appendChild(li);
     });
   }
