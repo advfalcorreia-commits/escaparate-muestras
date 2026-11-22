@@ -72,6 +72,7 @@
     av.hidden = !logado;
     if (logado) av.textContent = estado.usuario.nombre.charAt(0);
     $("#btn-sair").hidden = !logado;
+    $("#btn-chave").hidden = !logado;
     $("#dock").hidden = !(logado && COM_DOCK.indexOf(v) >= 0);
     document.querySelectorAll(".dock button[data-ir]").forEach(function (b) {
       b.classList.toggle("ativo", b.getAttribute("data-ir") === v);
@@ -581,6 +582,18 @@
   }
 
   $("#nova-busca").addEventListener("click", function () { abrirModal(1); });
+
+  /* atalho no topo: abre o campo da chave sem passar pela busca */
+  $("#btn-chave").addEventListener("click", function () {
+    mostrar("buscar");
+    fecharModal();
+    $("#chave-google").hidden = false;
+    $("#busca-vazia").hidden = true;
+    $("#busca-resultados").hidden = true;
+    $("#chave-input").value = Places.chave() || "";
+    $("#chave-input").focus();
+    window.scrollTo(0, 0);
+  });
 
   (function () {
     var b = $("#chave-guardar");
