@@ -88,6 +88,8 @@
     e.preventDefault();
     var f = e.target, nome = (f.nombre.value || "").trim(), mail = (f.email.value || "").trim();
     if (!nome || !mail) return;
+    var k = (f.clave && f.clave.value || "").trim();
+    if (k.length > 20) Places.definirChave(k);
     estado.usuario = { nombre: nome, email: mail };
     gravar(); mostrar("dashboard");
     brinde("Hola, " + nome + ". Pulsa «Buscar» para empezar.");
@@ -874,5 +876,9 @@
   }
 
   // ----------------------------------------------------------------- arranque
+  (function () {
+    var c = document.getElementById("clave-entrada");
+    if (c && Places.temChave()) c.value = Places.chave();
+  })();
   mostrar(estado.usuario ? "dashboard" : "entrar");
 })();
