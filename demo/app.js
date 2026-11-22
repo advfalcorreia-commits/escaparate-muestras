@@ -11,8 +11,10 @@
   var ed = null;
   var timerGerando = null;
 
-  var CORES = ["#8c2f39", "#b45309", "#0f766e", "#1d4ed8", "#7c3aed",
-               "#be123c", "#15803d", "#0e7490", "#4d7c0f", "#0f172a"];
+  // Cores que existem numa fachada, num toldo, num azulejo — nada de violeta
+  // nem de azul de interface. Todas aguentam uma fotografia ao lado.
+  var CORES = ["#9c3a1a", "#8c2f39", "#a8562a", "#b07a1e", "#6b6b1f",
+               "#33584a", "#1f4f5c", "#2b3a55", "#4a3550", "#26221d"];
 
   var SVG = {
     tel: '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1.1-.2 1.2.4 2.6.6 4 .6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.4.2 2.8.6 4 .1.4 0 .8-.2 1.1l-2.3 2.7z"/></svg>',
@@ -43,6 +45,16 @@
     return String(s == null ? "" : s).toLowerCase().normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "");
   }
+  /* As URLs de foto da Google levam a chave na query — não podem ficar
+     gravadas no localStorage quando se publica um site. */
+  function semFotos(lead) {
+    var o = {};
+    Object.keys(lead || {}).forEach(function (k) {
+      if (k !== "fotos" && k !== "fotoPrincipal" && k !== "fotoCreditos") o[k] = lead[k];
+    });
+    return o;
+  }
+
   function slugificar(s) {
     return String(s || "").toLowerCase().normalize("NFD")
       .replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-")
@@ -157,31 +169,38 @@
     var max = Math.max(1, Math.max.apply(null, meses.map(function (m) {
       return Math.max(m.geradas, m.vendidas);
     })));
+    // sem nada gerado o gráfico é uma caixa vazia a fingir de gráfico: diz-se
+    var vazio = !meses.some(function (m) { return m.geradas || m.vendidas; });
     var W = 520, base = 140, larg = W / meses.length, out = "";
     meses.forEach(function (m, i) {
       var x = i * larg + larg * 0.18, w = larg * 0.26;
       var hg = (m.geradas / max) * 100, hv = (m.vendidas / max) * 100;
       out += '<rect x="' + x + '" y="' + (base - hg) + '" width="' + w + '" height="' +
-        Math.max(hg, 1) + '" rx="3" fill="#3b82f6" opacity="' + (hg ? .95 : .18) + '"/>';
+        Math.max(hg, 1) + '" rx="2" fill="#1b1916" opacity="' + (hg ? .95 : .18) + '"/>';
       out += '<rect x="' + (x + w + 3) + '" y="' + (base - hv) + '" width="' + w + '" height="' +
-        Math.max(hv, 1) + '" rx="3" fill="#22c55e" opacity="' + (hv ? .95 : .18) + '"/>';
-      out += '<text x="' + (x + w) + '" y="' + (base + 18) + '" fill="#8896b8" font-size="11" ' +
-        'text-anchor="middle" font-family="Karla,sans-serif">' + m.rotulo + "</text>";
+        Math.max(hv, 1) + '" rx="2" fill="#9c3a1a" opacity="' + (hv ? .95 : .18) + '"/>';
+      out += '<text x="' + (x + w) + '" y="' + (base + 18) + '" fill="#8b8474" font-size="11" ' +
+        'text-anchor="middle" font-family="Inter,system-ui,sans-serif">' + m.rotulo + "</text>";
     });
     out += '<line x1="0" y1="' + base + '" x2="' + W + '" y2="' + base +
-      '" stroke="rgba(255,255,255,.12)"/>';
+      '" stroke="#d6cfc2"/>';
+    if (vazio) {
+      out += '<text x="' + W / 2 + '" y="' + (base / 2) + '" fill="#8b8474" ' +
+        'font-size="12.5" text-anchor="middle" font-family="Inter,system-ui,sans-serif">' +
+        "Todavía no has generado ninguna web</text>";
+    }
     svg.innerHTML = out;
   }
 
   function desenharDonut(vendidas, publicadas, borradores) {
     var total = vendidas + publicadas + borradores, svg = $("#donut");
     if (!total) {
-      svg.innerHTML = '<circle cx="21" cy="21" r="15.9" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="6"/>';
+      svg.innerHTML = '<circle cx="21" cy="21" r="15.9" fill="none" stroke="#d6cfc2" stroke-width="6"/>';
       return;
     }
-    var partes = [{ n: vendidas, cor: "#22c55e" }, { n: publicadas, cor: "#3b82f6" },
-                  { n: borradores, cor: "#64748b" }];
-    var acc = 0, out = '<circle cx="21" cy="21" r="15.9" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="6"/>';
+    var partes = [{ n: vendidas, cor: "#9c3a1a" }, { n: publicadas, cor: "#1b1916" },
+                  { n: borradores, cor: "#b4ac9b" }];
+    var acc = 0, out = '<circle cx="21" cy="21" r="15.9" fill="none" stroke="#e7e1d5" stroke-width="6"/>';
     partes.forEach(function (p) {
       if (!p.n) return;
       var dash = (p.n / total * 100).toFixed(2);
@@ -226,7 +245,7 @@
     var mig = $("#mb-migalhas");
     var partes = [];
     if (area) partes.push('<span class="bc pais">España</span>' +
-      '<span class="bc">📍 <b>' + esc(area.nombre) + "</b></span>");
+      '<span class="bc"><b>' + esc(area.nombre) + "</b></span>");
     if (nicho) partes.push('<span class="bc"><b>' +
       esc((window.NICHOS[nicho] || {}).nombre || nicho) + "</b></span>");
     mig.innerHTML = partes.join("");
@@ -239,7 +258,7 @@
         '<div class="autocomp"><div class="campo" style="margin:0">' +
         '<input id="mb-lugar" placeholder="Ej: Madrid · Centro" autocomplete="off"></div>' +
         '<div class="resultados" id="mb-sug" hidden></div></div>' +
-        '<button class="bt" id="mb-cerca" style="width:100%;margin-top:10px">📍 Cerca de mí</button>' +
+        '<button class="bt" id="mb-cerca" style="width:100%;margin-top:10px">Cerca de mí</button>' +
         '<div class="chips" id="mb-recentes"></div>';
       ligarLugares($("#mb-lugar"), $("#mb-sug"), function (l) {
         area = l;
@@ -248,7 +267,7 @@
       ligarCercaDeMi($("#mb-cerca"));
       var rec = $("#mb-recentes");
       (estado.recentesAreas || []).slice(0, 5).forEach(function (r) {
-        var b = el("button", "chip", "📍 " + esc(r.nombre));
+        var b = el("button", "chip", esc(r.nombre));
         b.addEventListener("click", function () { area = r; renderModal(2); });
         rec.appendChild(b);
       });
@@ -329,7 +348,7 @@
         };
         renderModal(2);
       }, function () {
-        botao.textContent = "📍 Cerca de mí";
+        botao.textContent = "Cerca de mí";
         brinde("Sin permiso de ubicación. Escribe la zona a mano.");
       }, { timeout: 8000 });
     });
@@ -346,9 +365,9 @@
       if (filtro && norm(n.nombre).indexOf(norm(filtro)) < 0) return;
       var cor = n.colores || {};
       var b = el("button", "nicho-item",
-        '<span class="ic" style="background:' + esc(cor.acento || "#3b82f6") + '">' +
+        '<span class="ic" style="background:' + esc(cor.acento || "#1b1916") + '">' +
         esc(n.nombre.charAt(0)) + "</span><span>" + esc(n.nombre) + "</span>");
-      if (nicho === slug) b.style.borderColor = "rgba(96,165,250,.7)";
+      if (nicho === slug) b.style.borderColor = "#9c3a1a";
       b.addEventListener("click", function () {
         nicho = slug;
         texto = "";
@@ -497,19 +516,22 @@
   function tarjeta(l) {
     var nichoSlug = l.nicho || nicho;
     var n = window.NICHOS[nichoSlug] || {};
-    var cor = (n.colores || {}).acento || "#3b82f6";
+    var cor = (n.colores || {}).acento || "#1b1916";
     var card = el("article", "alvo");
     card.innerHTML =
       '<div class="alvo-topo">' +
-        '<span class="alvo-ic" style="background:' + esc(cor) + '">' +
-          esc((l.nombre || "?").charAt(0).toUpperCase()) + "</span>" +
+        (l.fotoPrincipal
+          ? '<span class="alvo-ic foto"><img alt="" loading="lazy" src="' +
+            esc(l.fotoPrincipal) + '"></span>'
+          : '<span class="alvo-ic" style="background:' + esc(cor) + '">' +
+            esc((l.nombre || "?").charAt(0).toUpperCase()) + "</span>") +
         "<div><h4>" + esc(l.nombre) + "</h4>" +
         (l.web ? '<span class="tag com">Ya tiene web</span>'
                : '<span class="tag sem">Sin web</span>') + "</div></div>" +
       '<div class="nota">' +
         (l.nota ? '<span class="estrela">★ ' + l.nota.toFixed(1) + "</span> " +
           (l.resenas ? '<span style="opacity:.7">(' + l.resenas + ")</span> " : "") : "") +
-        (l.telefono ? "☎ " + esc(l.telefono) : "sin teléfono") +
+        (l.telefono ? esc(l.telefono) : "sin teléfono") +
         (l.direccion ? " · " + esc(l.direccion) : "") + "</div>" +
       '<div class="acoes">' +
         (l.web ? '<a class="mini" title="Su web" href="' + esc(l.web) +
@@ -517,7 +539,7 @@
         (l.telefono ? '<a class="mini" title="Llamar" href="tel:' +
           esc(l.telefono.replace(/[^\d+]/g, "")) + '">' + SVG.tel + "</a>" : "") +
         (l.telefono ? '<span class="mini" title="WhatsApp">' + SVG.wsp + "</span>" : "") +
-        '<button class="bt verde pequeno">⚡ Generar sitio</button>' +
+        '<button class="bt verde pequeno">Generar sitio</button>' +
       "</div>";
     card.querySelector(".bt").addEventListener("click", function () {
       animarGerando(l, nichoSlug);
@@ -792,7 +814,7 @@
     });
   });
 
-  $("#ed-voltar").addEventListener("click", function () { mostrar("resultados"); });
+  $("#ed-voltar").addEventListener("click", function () { mostrar("buscar"); });
 
   $("#ed-dominio").addEventListener("click", function () {
     if (!ed) return;
@@ -811,7 +833,7 @@
       return w.lead.nombre === ed.lead.nombre && w.nicho === ed.nicho;
     })[0];
     var registo = {
-      id: ja ? ja.id : Date.now(), lead: ed.lead, nicho: ed.nicho,
+      id: ja ? ja.id : Date.now(), lead: semFotos(ed.lead), nicho: ed.nicho,
       modelo: ed.modelo, secoes: ed.secoes, cor: ed.cor, cta: ed.cta,
       ciudad: ed.ciudad, direccion: ed.direccion, whatsapp: ed.whatsapp,
       horario: ed.horario, textos: ed.textos, slug: slug,
@@ -840,7 +862,7 @@
       card.innerHTML =
         '<div class="alvo-topo">' +
           '<span class="alvo-ic" style="background:' +
-            esc(w.cor || cor.acento || "#3b82f6") + '">' +
+            esc(w.cor || cor.acento || "#1b1916") + '">' +
             esc((w.lead.nombre || "?").charAt(0)) + "</span>" +
           "<div><h4>" + esc(w.lead.nombre) + "</h4>" +
           (w.vendida ? '<span class="tag sem">Vendida</span>'

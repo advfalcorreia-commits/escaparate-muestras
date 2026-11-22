@@ -7,378 +7,39 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Karla:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>
-:root{
-  --fundo:#070c18; --fundo2:#0b1223; --card:rgba(255,255,255,.045); --card2:rgba(255,255,255,.075);
-  --borda:rgba(255,255,255,.09); --texto:#e9effc; --suave:#8896b8;
-  --azul:#3b82f6; --verde:#22c55e; --verde2:#34d399; --roxo:#a855f7; --ambar:#f59e0b; --vermelho:#ef4444;
-}
-*,*::before,*::after{box-sizing:border-box}
-/* o [hidden] do browser perde para qualquer display definido por nós */
-[hidden]{display:none!important}
-html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--fundo);color:var(--texto);
-  font-family:"Karla",ui-sans-serif,system-ui,sans-serif;font-size:15px;line-height:1.55;
-  -webkit-font-smoothing:antialiased;min-height:100vh;overflow-x:hidden}
-a{color:inherit}
-::selection{background:var(--azul);color:#fff}
-button{font-family:inherit}
-h1,h2,h3{margin:0;letter-spacing:-.02em}
-h1,h2{font-weight:700}
-.fraunces{font-family:"Fraunces",Georgia,serif;font-weight:600;letter-spacing:-.02em}
-
-/* fundo ambiente */
-.ambiente{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-.ambiente i{position:absolute;display:block;border-radius:50%;filter:blur(90px);opacity:.5}
-.ambiente i:nth-child(1){width:520px;height:520px;left:-140px;top:-160px;background:#1d3a8f}
-.ambiente i:nth-child(2){width:460px;height:460px;right:-120px;top:120px;background:#0f5132;opacity:.35}
-.ambiente i:nth-child(3){width:380px;height:380px;left:38%;bottom:-160px;background:#3b1d6e;opacity:.4}
-
-.app{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column}
-
-/* topo */
-.topo{display:flex;align-items:center;justify-content:space-between;gap:18px;
-  padding:16px 28px;border-bottom:1px solid var(--borda);backdrop-filter:blur(8px)}
-.marca{display:flex;align-items:center;gap:10px;text-decoration:none;font-weight:800;letter-spacing:-.02em}
-.marca .logo{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;
-  background:linear-gradient(135deg,#3b82f6,#22c55e);font-size:13px;color:#04101f;font-weight:800}
-.topo-dir{display:flex;align-items:center;gap:12px;font-size:13px}
-.selo{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;color:#8fe3b0;
-  border:1px solid rgba(34,197,94,.35);background:rgba(34,197,94,.12);padding:4px 9px;border-radius:999px}
-.avatar{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;
-  background:linear-gradient(135deg,#6366f1,#a855f7);color:#fff;text-transform:uppercase}
-.link-limpo{background:none;border:0;color:var(--suave);cursor:pointer;font-size:13px;padding:0}
-.link-limpo:hover{color:var(--texto)}
-
-.vista{display:none;flex:1;padding:26px 28px 130px;max-width:1240px;margin:0 auto;width:100%}
-.vista.ativa{display:block}
-@media(max-width:820px){.vista{padding:18px 16px 120px}.topo{padding:12px 16px}}
-
-/* cartões base */
-.card{background:var(--card);border:1px solid var(--borda);border-radius:16px;padding:20px}
-.card h3{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--suave);font-weight:800}
-.kpi{font-family:"Karla",sans-serif;font-weight:800;font-size:34px;letter-spacing:-.03em;margin:10px 0 0;line-height:1}
-.kpi.pequeno{font-size:26px}
-
-.bt{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--borda);
-  background:var(--card2);color:var(--texto);border-radius:12px;padding:11px 18px;font-size:14px;
-  font-weight:700;cursor:pointer;transition:.18s;text-decoration:none}
-.bt:hover{background:rgba(255,255,255,.12)}
-.bt.primario{background:linear-gradient(135deg,#2563eb,#3b82f6);border-color:transparent;color:#fff}
-.bt.primario:hover{filter:brightness(1.1)}
-.bt.verde{background:linear-gradient(135deg,#16a34a,#22c55e);border-color:transparent;color:#04160a}
-.bt.verde:hover{filter:brightness(1.08)}
-.bt.pequeno{padding:8px 13px;font-size:12.5px;border-radius:10px}
-.bt:disabled{opacity:.5;cursor:not-allowed}
-
-/* login */
-.entrar{max-width:430px;margin:6vh auto 0}
-.entrar .card{padding:28px}
-.entrar h1{font-size:30px;margin:6px 0 8px;line-height:1.1}
-.entrar p{color:var(--suave);margin:0 0 22px;font-size:14px}
-.campo{display:grid;gap:6px;margin-bottom:14px}
-.campo label{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;color:var(--suave)}
-.campo input,.campo select{font:400 15px "Karla",sans-serif;padding:12px 13px;border:1px solid var(--borda);
-  background:rgba(0,0,0,.25);color:var(--texto);border-radius:11px;width:100%}
-.campo input:focus,.campo select:focus{outline:2px solid rgba(59,130,246,.6);outline-offset:-1px}
-
-/* dashboard */
-.linha-topo{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:14px;margin-bottom:14px}
-@media(max-width:900px){.linha-topo{grid-template-columns:1fr}}
-.fatura{background:linear-gradient(135deg,rgba(59,130,246,.16),rgba(34,197,94,.10));
-  border:1px solid rgba(96,165,250,.25)}
-.fatura .kpi{font-size:clamp(38px,6vw,54px);
-  background:linear-gradient(135deg,#60a5fa,#34d399);-webkit-background-clip:text;background-clip:text;
-  -webkit-text-fill-color:transparent}
-.grid2{display:grid;grid-template-columns:1.6fr 1fr;gap:14px}
-@media(max-width:900px){.grid2{grid-template-columns:1fr}}
-.legenda{display:flex;gap:16px;font-size:12.5px;color:var(--suave);margin-top:14px;flex-wrap:wrap}
-.legenda i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px}
-.donut-legenda{list-style:none;padding:0;margin:16px 0 0;font-size:13px;color:var(--suave)}
-.donut-legenda li{display:flex;align-items:center;gap:8px;padding:5px 0}
-.donut-legenda b{margin-left:auto;color:var(--texto)}
-.vazio{color:var(--suave);font-size:14px;text-align:center;padding:26px 10px}
-
-/* wizard */
-.wiz-topo{display:flex;align-items:center;gap:14px;margin-bottom:22px}
-.wiz-prog{display:flex;gap:5px;margin-left:auto;align-items:center}
-.wiz-prog span{width:26px;height:4px;border-radius:2px;background:rgba(255,255,255,.14)}
-.wiz-prog span.on{background:linear-gradient(90deg,#3b82f6,#22c55e)}
-.wiz-corpo{display:grid;grid-template-columns:1fr 1fr;gap:34px;align-items:center;min-height:52vh}
-@media(max-width:980px){.wiz-corpo{grid-template-columns:1fr;gap:20px}}
-.passo-num{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;font-weight:800;color:var(--suave)}
-.wiz-corpo h2{font-size:clamp(24px,3.4vw,34px);margin:8px 0 6px;line-height:1.1}
-.wiz-corpo .dica{color:var(--suave);font-size:14px;margin:0 0 20px}
-.migalhas{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
-.migalha{font-size:12px;border:1px solid var(--borda);background:var(--card);border-radius:999px;padding:5px 11px}
-.migalha b{font-weight:800}
-.globo-caixa{position:relative;aspect-ratio:1;max-width:460px;width:100%;margin:0 auto;
-  display:grid;place-items:center}
-#globo{width:100%;height:100%;display:block}
-.globo-rodape{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);font-size:11px;
-  letter-spacing:.1em;color:var(--suave);font-variant-numeric:tabular-nums;white-space:nowrap}
-.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
-.chip{border:1px solid var(--borda);background:var(--card);border-radius:999px;padding:7px 13px;font-size:13px;cursor:pointer}
-.chip:hover{background:var(--card2)}
-.pais-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:8px}
-.pais{display:flex;align-items:center;gap:10px;border:1px solid var(--borda);background:var(--card);
-  border-radius:12px;padding:13px 15px;cursor:pointer;font-weight:700;font-size:14px}
-.pais:hover{background:var(--card2)}
-.pais.off{opacity:.4;cursor:not-allowed}
-.nichos-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:9px;margin-top:12px;
-  max-height:300px;overflow:auto;padding-right:4px}
-.nicho-item{display:flex;flex-direction:column;align-items:center;gap:7px;border:1px solid var(--borda);
-  background:var(--card);border-radius:12px;padding:13px 8px;cursor:pointer;text-align:center;font-size:12px;
-  transition:.15s}
-.nicho-item:hover{background:var(--card2);border-color:rgba(96,165,250,.5)}
-.nicho-item .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-weight:800;
-  font-size:13px;color:#04101f}
-.contador-busca{font-size:11.5px;color:var(--suave);margin-top:10px}
-
-/* resultados */
-.res-grid{display:grid;grid-template-columns:250px 1fr;gap:20px}
-@media(max-width:900px){.res-grid{grid-template-columns:1fr}}
-.lateral .card{margin-bottom:12px}
-.lateral .busca{margin-bottom:14px}
-.lateral h4{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--suave);
-  margin:0 0 10px;font-weight:800}
-.recentes{list-style:none;padding:0;margin:0;font-size:13px}
-.recentes li{padding:8px 0;border-bottom:1px solid var(--borda);cursor:pointer;color:var(--suave)}
-.recentes li:hover{color:var(--texto)}
-.recentes li:last-child{border:0}
-.alvos{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:12px}
-.alvo{background:rgba(255,255,255,.05);border:1px solid var(--borda);border-radius:14px;padding:15px;
-  display:flex;flex-direction:column;gap:9px}
-.alvo-topo{display:flex;gap:10px;align-items:center}
-.alvo-ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-weight:800;
-  color:#04101f;flex:none}
-.alvo h4{margin:0;font-size:14.5px;font-weight:700;line-height:1.2}
-.tag{font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:800;padding:2px 7px;
-  border-radius:999px;white-space:nowrap}
-.tag.sem{color:#8fe3b0;background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.3)}
-.tag.com{color:#9db4e0;background:rgba(148,163,184,.12);border:1px solid var(--borda)}
-.alvo .nota{font-size:12.5px;color:var(--suave);display:flex;gap:12px;flex-wrap:wrap}
-.alvo .estrela{color:var(--ambar);font-weight:700}
-.alvo .acoes{display:flex;gap:6px;align-items:center;margin-top:auto;padding-top:4px}
-.mini{width:28px;height:28px;border-radius:8px;border:1px solid var(--borda);background:rgba(255,255,255,.04);
-  display:grid;place-items:center;font-size:12px;cursor:pointer;color:var(--suave);text-decoration:none}
-.mini:hover{background:var(--card2);color:var(--texto)}
-.alvo .bt{margin-left:auto}
-
-/* gerando */
-.gerando{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;min-height:60vh}
-@media(max-width:900px){.gerando{grid-template-columns:1fr}}
-.crono{font-size:clamp(46px,7vw,64px);font-weight:800;letter-spacing:-.04em;line-height:1;
-  background:linear-gradient(135deg,#60a5fa,#34d399);-webkit-background-clip:text;background-clip:text;
-  -webkit-text-fill-color:transparent;margin:14px 0 22px}
-.check{list-style:none;padding:0;margin:0;font-size:13.5px;color:var(--suave)}
-.check li{padding:6px 0;display:flex;gap:9px;align-items:center;opacity:.45;transition:.3s}
-.check li.on{opacity:1;color:var(--texto)}
-.check li .pt{width:7px;height:7px;border-radius:50%;background:var(--suave);flex:none}
-.check li.on .pt{background:var(--verde2);box-shadow:0 0 10px rgba(52,211,153,.9)}
-.esqueleto{position:relative;aspect-ratio:4/3;border-radius:16px;overflow:hidden;
-  background:linear-gradient(135deg,rgba(59,130,246,.16),rgba(34,197,94,.12));
-  border:1px solid rgba(96,165,250,.3);padding:22px;display:grid;gap:12px}
-.esqueleto i{display:block;border-radius:8px;background:linear-gradient(90deg,rgba(96,165,250,.25),rgba(52,211,153,.35));
-  animation:pulso 1.6s ease-in-out infinite}
-.esqueleto .h{height:56px}
-.esqueleto .l{height:14px;width:70%}
-.esqueleto .g{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;height:74px}
-@keyframes pulso{0%,100%{opacity:.55}50%{opacity:1}}
-
-/* preview */
-.gerar-grid{display:grid;grid-template-columns:320px 1fr;gap:20px;align-items:start}
-@media(max-width:980px){.gerar-grid{grid-template-columns:1fr}}
-.ficha h2{font-size:19px;margin:6px 0 12px;line-height:1.2}
-.dados{list-style:none;padding:0;margin:0 0 16px;font-size:13px}
-.dados li{display:flex;gap:9px;padding:7px 0;border-bottom:1px solid var(--borda);color:var(--suave)}
-.dados li:last-child{border:0}
-.dados b{color:var(--texto);min-width:74px;font-weight:700}
-.lienzo{background:#fff;border-radius:14px;overflow:hidden;border:1px solid var(--borda)}
-.lienzo-barra{display:flex;align-items:center;gap:8px;padding:9px 12px;background:#0f1729;
-  border-bottom:1px solid var(--borda);font-size:12px;color:var(--suave)}
-.lienzo-barra .sep{flex:1}
-.lienzo-barra button{background:none;border:1px solid var(--borda);color:var(--suave);border-radius:8px;
-  padding:5px 10px;font-size:11.5px;cursor:pointer}
-.lienzo-barra button.ativo{background:var(--card2);color:var(--texto);border-color:rgba(96,165,250,.5)}
-#preview{width:100%;height:min(74vh,760px);border:0;display:block;background:#fff}
-
-/* dock */
-.dock{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:80;display:flex;gap:6px;
-  align-items:center;padding:8px;border-radius:999px;border:1px solid var(--borda);
-  background:rgba(11,18,35,.86);backdrop-filter:blur(14px) saturate(1.4);
-  box-shadow:0 18px 40px rgba(0,0,0,.5)}
-.dock button{width:44px;height:44px;border-radius:12px;border:0;cursor:pointer;display:grid;place-items:center;
-  color:#06111f;font-weight:800;font-size:15px;transition:.15s;position:relative}
-.dock button:hover{transform:translateY(-2px)}
-.dock button.ativo{outline:2px solid rgba(255,255,255,.5);outline-offset:2px}
-.dock .b1{background:linear-gradient(135deg,#38bdf8,#22d3ee)}
-.dock .b2{background:linear-gradient(135deg,#3b82f6,#6366f1)}
-.dock .b3{background:linear-gradient(135deg,#22c55e,#16a34a)}
-.dock .b4{background:linear-gradient(135deg,#f59e0b,#f97316)}
-.dock .b5{background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff}
-.dock .sep{width:1px;height:26px;background:var(--borda);margin:0 4px}
-.dock .av{background:linear-gradient(135deg,#6366f1,#a855f7);color:#fff;border-radius:50%;font-size:13px}
-.dock .rot{position:absolute;bottom:52px;left:50%;transform:translateX(-50%);font-size:10.5px;
-  letter-spacing:.1em;text-transform:uppercase;font-weight:800;color:var(--texto);
-  background:rgba(11,18,35,.95);border:1px solid var(--borda);border-radius:8px;padding:5px 9px;
-  opacity:0;pointer-events:none;transition:.15s;white-space:nowrap}
-.dock button:hover .rot{opacity:1}
-.dock[hidden]{display:none!important}
-@media(max-width:820px){.dock{bottom:12px}.dock button{width:40px;height:40px}.dock .b4{display:none}}
-
-
-/* editor: pré-visualização à esquerda, painel à direita */
-.editor-grid{display:grid;grid-template-columns:1fr 342px;gap:14px;align-items:start}
-@media(max-width:1080px){.editor-grid{grid-template-columns:1fr}}
-.escena{border-radius:14px;overflow:hidden;border:1px solid var(--borda);background:#fff}
-.painel-ed{background:var(--card);border:1px solid var(--borda);border-radius:14px;overflow:hidden}
-.painel-cab{display:flex;justify-content:space-between;align-items:center;gap:10px;
-  padding:13px 15px;border-bottom:1px solid var(--borda)}
-.painel-ed section{padding:13px 15px;border-bottom:1px solid var(--borda)}
-.painel-ed section:last-of-type{border-bottom:0}
-.painel-ed h4{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--suave);
-  margin:0 0 9px;font-weight:800}
-.segmentado{display:flex;gap:6px}
-.segmentado button{flex:1;border:1px solid var(--borda);background:rgba(0,0,0,.2);color:var(--suave);
-  border-radius:9px;padding:8px;font-size:12.5px;font-weight:700;cursor:pointer}
-.segmentado button.on{border-color:rgba(96,165,250,.6);color:var(--texto);background:rgba(59,130,246,.16)}
-.secoes-lista{list-style:none;padding:0;margin:0;font-size:13px}
-.secoes-lista li{display:flex;justify-content:space-between;align-items:center;gap:10px;
-  padding:6px 0;border-bottom:1px solid var(--borda)}
-.secoes-lista li:last-child{border:0}
-.interruptor{width:34px;height:19px;border-radius:999px;background:rgba(255,255,255,.16);
-  position:relative;cursor:pointer;border:0;flex:none;transition:.18s}
-.interruptor::after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;
-  border-radius:50%;background:#fff;transition:.18s}
-.interruptor.on{background:linear-gradient(135deg,#16a34a,#22c55e)}
-.interruptor.on::after{left:17px}
-.cores{display:flex;gap:7px;flex-wrap:wrap}
-.cores button{width:25px;height:25px;border-radius:50%;border:2px solid transparent;cursor:pointer;
-  transition:.15s}
-.cores button:hover{transform:scale(1.1)}
-.cores button.on{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.25)}
-.ajuda{font-size:11.5px;color:var(--suave);margin:7px 0 0;line-height:1.45}
-.mini-input{width:100%;font:400 13px "Karla",sans-serif;padding:8px 10px;border:1px solid var(--borda);
-  background:rgba(0,0,0,.25);color:var(--texto);border-radius:9px}
-.mini-input:focus{outline:2px solid rgba(59,130,246,.55);outline-offset:-1px}
-.campo-mini{display:grid;gap:4px;margin-bottom:8px}
-.campo-mini span{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--suave);font-weight:800}
-.painel-pe{display:flex;gap:8px;padding:13px 15px}
-.painel-pe .bt{flex:1}
-.slug{display:flex;align-items:center;gap:2px;background:rgba(0,0,0,.25);border:1px solid var(--borda);
-  border-radius:10px;padding:0 10px;font-size:13px;color:var(--suave)}
-.slug input{border:0;background:none;color:var(--texto);font:700 13px "Karla",sans-serif;
-  padding:11px 4px;outline:none;flex:1;min-width:0}
-
-
-/* modal da busca */
-.modal{position:fixed;inset:0;z-index:120;display:grid;place-items:center;padding:24px}
-.modal[hidden]{display:none!important}
-.modal-fundo{position:absolute;inset:0;background:rgba(3,7,16,.72);backdrop-filter:blur(4px)}
-.modal-caixa{position:relative;width:min(1000px,96vw);max-height:88vh;overflow:auto;
-  background:linear-gradient(160deg,#0d1424,#0a1020 55%,#0b1526);
-  border:1px solid rgba(96,165,250,.22);border-radius:18px;
-  box-shadow:0 40px 90px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.03) inset}
-.modal-cab{display:flex;align-items:center;gap:12px;padding:14px 18px;
-  border-bottom:1px solid rgba(255,255,255,.07);position:sticky;top:0;background:rgba(11,18,33,.9);
-  backdrop-filter:blur(8px);z-index:2;border-radius:18px 18px 0 0}
-.modal-cab .x{margin-left:auto;background:none;border:0;color:var(--suave);font-size:19px;cursor:pointer;padding:4px 8px}
-.modal-cab .x:hover{color:#fff}
-.modal-corpo{display:grid;grid-template-columns:1fr 1fr;gap:26px;padding:22px 26px 28px;align-items:center}
-@media(max-width:860px){.modal-corpo{grid-template-columns:1fr}}
-.modal .globo-caixa{max-width:360px}
-.breadcrumb{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
-.bc{display:inline-flex;align-items:center;gap:7px;font-size:12px;padding:6px 12px;border-radius:999px;
-  border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:var(--texto)}
-.bc b{font-weight:800}
-.bc.pais::before{content:"🇪🇸";font-size:12px}
-
-/* autocomplete */
-.autocomp{position:relative}
-.autocomp .resultados{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:5;
-  background:#0d1526;border:1px solid rgba(255,255,255,.12);border-radius:12px;overflow:hidden;
-  box-shadow:0 18px 40px rgba(0,0,0,.5)}
-.autocomp .resultados[hidden]{display:none!important}
-.autocomp .res{display:flex;justify-content:space-between;gap:12px;padding:11px 14px;cursor:pointer;
-  font-size:13.5px;border-bottom:1px solid rgba(255,255,255,.06)}
-.autocomp .res:last-child{border:0}
-.autocomp .res:hover,.autocomp .res.sel{background:rgba(59,130,246,.18)}
-.autocomp .res small{color:var(--suave);font-size:11px;font-variant-numeric:tabular-nums}
-.autocomp .nada{padding:12px 14px;font-size:12.5px;color:var(--suave)}
-
-/* varrimento */
-.scanner{position:fixed;inset:0;z-index:130;display:grid;place-items:center;
-  background:radial-gradient(circle at 50% 45%,#0b1526,#050912 70%)}
-.scanner[hidden]{display:none!important}
-.scanner .dentro{text-align:center;max-width:520px;padding:20px}
-.scanner h3{font-size:13px;letter-spacing:.24em;text-transform:uppercase;color:#8fe3b0;margin:0 0 16px;font-weight:800}
-.scanner canvas{width:min(430px,80vw);height:min(430px,80vw);margin:0 auto;display:block}
-.scanner .coords{margin-top:10px;font-size:11.5px;letter-spacing:.1em;color:var(--suave);
-  font-variant-numeric:tabular-nums}
-.scanner .barra{width:min(320px,70vw);height:3px;border-radius:2px;background:rgba(255,255,255,.12);
-  margin:18px auto 0;overflow:hidden}
-.scanner .barra i{display:block;height:100%;width:36%;border-radius:2px;
-  background:linear-gradient(90deg,#3b82f6,#22c55e);animation:varre 1.1s ease-in-out infinite}
-@keyframes varre{0%{transform:translateX(-110%)}100%{transform:translateX(320%)}}
-
-/* vista de busca: barra lateral + conteúdo */
-.busca-grid{display:grid;grid-template-columns:250px 1fr;gap:18px}
-@media(max-width:900px){.busca-grid{grid-template-columns:1fr}}
-.lateral h4{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--suave);margin:0 0 10px;font-weight:800}
-.cidades-lista{list-style:none;padding:0;margin:0;max-height:60vh;overflow:auto}
-.cidades-lista li{padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);cursor:pointer}
-.cidades-lista li:last-child{border:0}
-.cidades-lista .cid{font-size:13px;font-weight:700}
-.cidades-lista .quando{font-size:10.5px;color:var(--suave);float:right}
-.chips-mini{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
-.chips-mini span{font-size:9.5px;padding:2px 7px;border-radius:999px;font-weight:700;
-  border:1px solid rgba(255,255,255,.12);color:var(--suave)}
-.filtros{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 16px}
-.filtros .cont{font-size:12.5px;color:var(--suave);margin-right:auto}
-.filtros .cont b{color:var(--texto)}
-.filtro{font-size:12px;padding:7px 13px;border-radius:999px;border:1px solid var(--borda);
-  background:rgba(0,0,0,.2);color:var(--suave);cursor:pointer;font-weight:700}
-.filtro.on{background:rgba(59,130,246,.18);border-color:rgba(96,165,250,.6);color:var(--texto)}
-.vazio-grande{display:grid;place-items:center;min-height:52vh;text-align:center}
-.vazio-grande .caixa{max-width:340px;padding:26px 24px;border-radius:14px;
-  background:rgba(10,16,30,.9);border:1px solid rgba(255,255,255,.10)}
-.vazio-grande h3{font-size:15px;margin:0 0 6px}
-.vazio-grande p{font-size:12.5px;color:var(--suave);margin:0;line-height:1.5}
-
-
-.barra-viva{display:flex;gap:8px;margin:0 0 8px}
-.barra-viva input{flex:1;font:400 15px "Karla",sans-serif;padding:12px 15px;border-radius:12px;
-  border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.28);color:var(--texto)}
-.barra-viva input:focus{outline:2px solid rgba(59,130,246,.6);outline-offset:-1px}
-.zona-viva{font-size:12.5px;color:var(--suave);margin:0 0 14px}
-.zona-viva b{color:var(--texto)}
-.carregando{display:flex;align-items:center;gap:10px;color:var(--suave);font-size:13.5px;padding:26px 0}
-.carregando i{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.2);
-  border-top-color:#3b82f6;animation:gira .8s linear infinite;display:inline-block}
-@keyframes gira{to{transform:rotate(360deg)}}
-.mais{display:block;margin:16px auto 0}
-
-/* brinde */
-.brinde{position:fixed;left:50%;bottom:96px;transform:translate(-50%,16px);opacity:0;pointer-events:none;
-  background:rgba(11,18,35,.96);border:1px solid var(--borda);color:var(--texto);font-size:13.5px;
-  padding:12px 18px;border-radius:12px;z-index:90;transition:.25s;max-width:90vw;text-align:center}
-.brinde.visivel{opacity:1;transform:translate(-50%,0)}
-@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="painel.css">
 </head>
 <body>
-<div class="ambiente"><i></i><i></i><i></i></div>
 
 <div class="app">
   <header class="topo">
-    <a class="marca" href="#" id="ir-inicio"><span class="logo">E</span> Escaparate</a>
+    <a class="marca" href="#" id="ir-inicio"><span class="logo">E</span><span class="marca-txt">Escaparate</span></a>
+
+    <nav class="dock" id="dock" hidden>
+      <button data-ir="dashboard" aria-label="Panel">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15"/><path d="M3.5 9.5h17M9.5 9.5v10"/></svg>
+        <span class="rot">Panel</span>
+      </button>
+      <button data-ir="buscar" aria-label="Buscar">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.4 15.4 20.5 20.5"/></svg>
+        <span class="rot">Buscar</span>
+      </button>
+      <button data-ir="painel" aria-label="Mis webs">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15"/><path d="M3.5 8.5h17"/></svg>
+        <span class="rot">Mis webs</span>
+      </button>
+      <span class="sep"></span>
+      <button class="av" id="dock-avatar" aria-label="Cuenta">A</button>
+    </nav>
+
     <div class="topo-dir">
       <span class="selo">Demo</span>
-      <span id="usuario-topo" style="color:var(--suave)"></span>
+      <span id="usuario-topo"></span>
       <span class="avatar" id="avatar" hidden>A</span>
-      <button class="link-limpo" id="btn-chave" hidden title="Clave de Google Places">⚙ Clave Google</button>
+      <button class="link-limpo" id="btn-chave" hidden aria-label="Clave de Google Places" title="Clave de Google Places">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="12" r="3.5"/><path d="M11.5 12h8M18 12v3M14.5 12v2"/></svg>
+        <span class="lbl">Clave Google</span></button>
       <button class="link-limpo" id="btn-sair" hidden>Salir</button>
     </div>
   </header>
@@ -389,24 +50,22 @@ h1,h2{font-weight:700}
       <div class="entrar">
         <div class="card">
           <p class="passo-num">Acceso de demostración</p>
-          <h1>Cómo funciona, <span class="fraunces" style="font-style:italic">por dentro</span>.</h1>
-          <p>Busca negocios de una ciudad, genera la web de uno y simula la venta.
+          <h1>Cómo funciona, <em>por dentro</em>.</h1>
+          <p class="intro">Busca negocios de una ciudad, genera la web de uno y simula la venta.
             Los datos son reales; no se cobra ni se publica nada.</p>
           <form id="form-entrar" autocomplete="off">
-            <div class="campo"><label>Tu nombre</label>
-              <input name="nombre" placeholder="Ana" required maxlength="40"></div>
-            <div class="campo"><label>Tu email</label>
-              <input name="email" type="email" placeholder="ana@ejemplo.es" required maxlength="80"></div>
+            <div class="campo"><label for="f-nombre">Tu nombre</label>
+              <input id="f-nombre" name="nombre" placeholder="Ana" required maxlength="40"></div>
+            <div class="campo"><label for="f-email">Tu email</label>
+              <input id="f-email" name="email" type="email" placeholder="ana@ejemplo.es" required maxlength="80"></div>
             <div class="campo">
-              <label>Clave de Google Places <span style="color:var(--suave);text-transform:none;letter-spacing:0">(para buscar de verdad)</span></label>
+              <label for="clave-entrada">Clave de Google Places <span class="opc">(para buscar de verdad)</span></label>
               <input name="clave" id="clave-entrada" placeholder="AIza…" autocomplete="off" spellcheck="false">
-              <span style="font-size:11.5px;color:var(--suave);line-height:1.45">
-                Se queda solo en este navegador. Sin ella, la demo usa datos guardados.
-              </span>
+              <span class="nota-campo">Se queda solo en este navegador. Sin ella, la demo usa datos guardados.</span>
             </div>
-            <button class="bt primario" type="submit" style="width:100%">Entrar en la demo</button>
+            <button class="bt primario" type="submit">Entrar en la demo</button>
           </form>
-          <p style="font-size:12px;color:var(--suave);margin:14px 0 0">Sin contraseña: en una demo no hay nada que proteger.</p>
+          <p class="pie-form">Sin contraseña: en una demo no hay nada que proteger.</p>
         </div>
       </div>
     </section>
@@ -417,45 +76,50 @@ h1,h2{font-weight:700}
         <div class="card fatura">
           <h3>Facturado</h3>
           <p class="kpi" id="k-factura">0 €</p>
-          <p style="color:var(--suave);font-size:12.5px;margin:8px 0 0">Suma de las webs vendidas</p>
+          <p class="rodape-kpi">Suma de las webs vendidas</p>
         </div>
-        <div class="card"><h3>Sites generados</h3><p class="kpi pequeno" id="k-geradas">0</p></div>
-        <div class="card"><h3>Vendas</h3><p class="kpi pequeno" id="k-vendidas">0</p>
-          <p style="color:var(--suave);font-size:12.5px;margin:6px 0 0" id="k-conversao">0 % de conversión</p></div>
+        <div class="card">
+          <h3>Sites generados</h3>
+          <p class="kpi pequeno" id="k-geradas">0</p>
+        </div>
+        <div class="card">
+          <h3>Ventas</h3>
+          <p class="kpi pequeno" id="k-vendidas">0</p>
+          <p class="rodape-kpi" id="k-conversao">0 % de conversión</p>
+        </div>
       </div>
+
       <div class="grid2">
         <div class="card">
           <h3>Webs generadas y vendidas</h3>
-          <svg id="barras" viewBox="0 0 520 170" style="width:100%;height:170px;margin-top:10px"></svg>
+          <svg id="barras" viewBox="0 0 520 170" aria-label="Webs generadas y vendidas por mes"></svg>
           <div class="legenda">
-            <span><i style="background:#3b82f6"></i>Generadas</span>
-            <span><i style="background:#22c55e"></i>Vendidas</span>
+            <span><i class="sw sw-tinta"></i>Generadas</span>
+            <span><i class="sw sw-acento"></i>Vendidas</span>
           </div>
         </div>
         <div class="card">
           <h3>Estado de tus webs</h3>
-          <div style="display:flex;align-items:center;gap:16px;margin-top:8px">
-            <svg viewBox="0 0 42 42" width="108" height="108" id="donut"></svg>
-            <ul class="donut-legenda" style="flex:1">
-              <li><i style="background:#22c55e;width:9px;height:9px;border-radius:2px;display:inline-block"></i>
-                Vendida <b id="d-vendida">0</b></li>
-              <li><i style="background:#3b82f6;width:9px;height:9px;border-radius:2px;display:inline-block"></i>
-                Publicada <b id="d-publicada">0</b></li>
-              <li><i style="background:#64748b;width:9px;height:9px;border-radius:2px;display:inline-block"></i>
-                Borrador <b id="d-borrador">0</b></li>
+          <div class="donut-caixa">
+            <svg viewBox="0 0 42 42" width="96" height="96" id="donut" aria-hidden="true"></svg>
+            <ul class="donut-legenda">
+              <li><i class="sw sw-acento"></i>Vendida <b id="d-vendida">0</b></li>
+              <li><i class="sw sw-tinta"></i>Publicada <b id="d-publicada">0</b></li>
+              <li><i class="sw sw-fraca"></i>Borrador <b id="d-borrador">0</b></li>
             </ul>
           </div>
         </div>
       </div>
-      <div class="card" style="margin-top:14px">
+
+      <div class="card cobertura">
         <h3>Cobertura de la demo</h3>
-        <div style="display:flex;gap:34px;flex-wrap:wrap;margin-top:10px">
+        <div class="numeros">
           <div><span class="kpi pequeno" id="c-leads">—</span>
-            <div style="color:var(--suave);font-size:12.5px">negocios en OpenStreetMap</div></div>
+            <div class="rot">negocios de muestra</div></div>
           <div><span class="kpi pequeno" id="c-cidades">—</span>
-            <div style="color:var(--suave);font-size:12.5px">ciudades</div></div>
+            <div class="rot">ciudades</div></div>
           <div><span class="kpi pequeno" id="c-nichos">—</span>
-            <div style="color:var(--suave);font-size:12.5px">nichos con datos</div></div>
+            <div class="rot">nichos con datos</div></div>
         </div>
       </div>
     </section>
@@ -464,31 +128,29 @@ h1,h2{font-weight:700}
     <section class="vista" id="v-buscar">
       <div class="busca-grid">
         <aside class="lateral">
-          <div class="card" style="margin-bottom:12px">
-            <button class="bt primario pequeno" id="nova-busca" style="width:100%">Nova busca</button>
-          </div>
-          <div class="card">
-            <h4>Cidades</h4>
+          <button class="bt primario" id="nova-busca">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.5v13M5.5 12h13"/></svg>
+            Nueva búsqueda</button>
+          <div class="bloco">
+            <h4>Ciudades</h4>
             <ul class="cidades-lista" id="cidades-lista"></ul>
             <p class="ajuda" id="cidades-vazio">Todavía no has buscado ninguna zona.</p>
           </div>
         </aside>
         <div>
           <div id="chave-google" hidden>
-            <div class="card" style="border-color:rgba(96,165,250,.35)">
-              <h3 style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#8fe3b0;margin:0 0 8px">
-                Falta la clave de Google Places</h3>
-              <p style="font-size:13.5px;color:var(--suave);margin:0 0 12px;line-height:1.55">
-                La búsqueda en tiempo real usa la Google Places API — la misma que el SitesLead.
+            <div class="bloco-aviso">
+              <h3>Falta la clave de Google Places</h3>
+              <p>La búsqueda en tiempo real usa la Google Places API — la misma que el SitesLead.
                 Pega aquí tu clave y queda guardada <b>solo en este navegador</b>: no viaja al
                 repositorio ni a ningún servidor nuestro.</p>
-              <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <div class="linha-chave">
                 <input class="mini-input" id="chave-input" placeholder="AIza…" style="flex:1;min-width:220px">
                 <button class="bt verde" id="chave-guardar">Guardar clave</button>
               </div>
-              <details style="margin-top:12px">
-                <summary style="cursor:pointer;font-size:12.5px;color:var(--suave)">Cómo conseguirla</summary>
-                <ol style="font-size:12.5px;color:var(--suave);line-height:1.6;margin:10px 0 0;padding-left:18px">
+              <details>
+                <summary>Cómo conseguirla</summary>
+                <ol>
                   <li>Google Cloud Console → nuevo proyecto.</li>
                   <li>Activar <b>Places API (New)</b>.</li>
                   <li>APIs y servicios → Credenciales → Crear clave de API.</li>
@@ -500,25 +162,27 @@ h1,h2{font-weight:700}
           </div>
           <div id="busca-vazia" class="vazio-grande">
             <div class="caixa">
-              <h3>Busque leads por cidade</h3>
-              <p>Clique em <b>Nova busca</b>, escolha o país, a cidade e o nicho — a gente
-                lista os comércios da região.</p>
+              <h3>Busca clientes por ciudad</h3>
+              <p>Pulsa <b>Nueva búsqueda</b>: eliges la zona, el nicho, y sale la lista de
+                negocios que aún no tienen web.</p>
             </div>
           </div>
           <div id="busca-resultados" hidden>
             <div class="barra-viva">
               <input id="vivo-texto" placeholder="Busca: abogados, peluquería, bar…" autocomplete="off">
-              <button class="bt pequeno" id="vivo-cerca" title="Usar a minha localização">📍 Cerca de mí</button>
+              <button class="bt pequeno" id="vivo-cerca" title="Usar a minha localização">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s6-5.4 6-10a6 6 0 1 0-12 0c0 4.6 6 10 6 10z"/><circle cx="12" cy="11" r="2"/></svg>
+                Cerca de mí</button>
             </div>
             <p class="zona-viva" id="vivo-zona"></p>
             <div class="filtros">
               <span class="cont" id="res-cont"></span>
-              <button class="filtro on" data-filtro="sem">Sem site</button>
+              <button class="filtro on" data-filtro="sem">Sin web</button>
               <button class="filtro" data-filtro="todos">Todos</button>
-              <button class="filtro" data-filtro="com">Já tem site</button>
+              <button class="filtro" data-filtro="com">Ya tiene web</button>
             </div>
             <div class="alvos" id="alvos"></div>
-            <p class="ajuda" id="res-rodape" style="margin-top:14px"></p>
+            <p class="ajuda" id="res-rodape"></p>
           </div>
         </div>
       </div>
@@ -529,10 +193,13 @@ h1,h2{font-weight:700}
       <div class="modal-fundo" id="modal-fundo"></div>
       <div class="modal-caixa">
         <div class="modal-cab">
-          <button class="bt pequeno" id="mb-voltar">← Voltar</button>
-          <span class="passo-num">Nova busca</span>
+          <button class="bt pequeno" id="mb-voltar">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+            Voltar</button>
+          <span class="passo-num">Nueva búsqueda</span>
           <div class="wiz-prog" style="margin-left:auto"><span id="p1"></span><span id="p2"></span><span id="p3"></span></div>
-          <button class="x" id="mb-fechar" aria-label="Fechar">✕</button>
+          <button class="x" id="mb-fechar" aria-label="Cerrar">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
         </div>
         <div class="modal-corpo">
           <div class="globo-caixa">
@@ -542,10 +209,10 @@ h1,h2{font-weight:700}
           <div>
             <div class="breadcrumb" id="mb-migalhas"></div>
             <p class="passo-num" id="mb-passo">Paso 1 de 3</p>
-            <h2 id="mb-pergunta" style="font-size:clamp(22px,3vw,30px);margin:8px 0 6px"></h2>
-            <p class="dica" id="mb-dica" style="color:var(--suave);font-size:13.5px;margin:0 0 16px"></p>
+            <h2 id="mb-pergunta"></h2>
+            <p class="dica" id="mb-dica"></p>
             <div id="mb-campo"></div>
-            <p class="contador-busca" id="mb-contador" style="font-size:11.5px;color:var(--suave);margin-top:12px"></p>
+            <p class="contador-busca" id="mb-contador"></p>
           </div>
         </div>
       </div>
@@ -566,8 +233,8 @@ h1,h2{font-weight:700}
       <div class="gerando">
         <div>
           <p class="passo-num">Generando el sitio</p>
-          <h2 id="g-titulo" style="margin-top:8px">—</h2>
-          <p style="color:var(--suave);font-size:14px;margin:6px 0 0" id="g-sub"></p>
+          <h2 id="g-titulo">—</h2>
+          <p id="g-sub"></p>
           <p class="crono" id="g-crono">0.0s</p>
           <ul class="check" id="g-check">
             <li><span class="pt"></span>Aplicando colores y tipografía</li>
@@ -634,7 +301,7 @@ h1,h2{font-weight:700}
               <input class="mini-input" id="ed-horario"></div>
           </section>
 
-          <p class="ajuda" style="padding:0 15px 12px">Textos y fotos: haz clic en la vista previa para editar.</p>
+          <p class="ajuda">Textos y fotos: haz clic en la vista previa para editar.</p>
 
           <div class="painel-pe">
             <button class="bt" id="ed-voltar">Volver</button>
@@ -646,38 +313,29 @@ h1,h2{font-weight:700}
 
     <!-- domínio -->
     <section class="vista" id="v-dominio">
-      <div style="max-width:560px;margin:6vh auto 0">
+      <div class="dominio">
         <div class="card">
           <p class="passo-num">Último paso</p>
-          <h2 style="font-size:26px;margin:8px 0 6px">Elige el dominio</h2>
-          <p style="color:var(--suave);font-size:14px;margin:0 0 20px">
-            Es el enlace que le vas a mandar al dueño para que vea su web.</p>
+          <h2>Elige el dominio</h2>
+          <p class="intro">Es el enlace que le vas a mandar al dueño para que vea su web.</p>
           <div class="campo-mini"><span>Dirección del sitio</span>
             <div class="slug"><span>escaparate.es/</span><input id="dom-slug" maxlength="40"></div>
           </div>
           <p class="ajuda" style="margin-bottom:18px">En la demo no se publica nada: el sitio
             queda guardado en tu lista.</p>
-          <button class="bt verde" id="dom-publicar" style="width:100%">Publicar sitio</button>
-          <button class="bt" id="dom-voltar" style="width:100%;margin-top:8px">Volver al editor</button>
+          <button class="bt verde" id="dom-publicar">Publicar sitio</button>
+          <button class="bt" id="dom-voltar">Volver al editor</button>
         </div>
       </div>
     </section>
 
     <!-- painel -->
     <section class="vista" id="v-painel">
-      <h2 style="font-size:20px;margin-bottom:14px">Mis webs</h2>
+      <h2 class="titulo-vista">Mis webs</h2>
       <div class="alvos" id="painel-lista"></div>
       <p class="vazio" id="painel-vazio" hidden>Todavía no has generado ninguna web.</p>
     </section>
   </main>
-
-  <nav class="dock" id="dock" hidden>
-    <button class="b1" data-ir="dashboard" aria-label="Panel"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg><span class="rot">Panel</span></button>
-    <button class="b2" data-ir="buscar" aria-label="Buscar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span class="rot">Buscar</span></button>
-    <button class="b3" data-ir="painel" aria-label="Mis webs"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="rot">Mis webs</span></button>
-    <span class="sep"></span>
-    <button class="av" id="dock-avatar" aria-label="Cuenta">A</button>
-  </nav>
 </div>
 
 <div class="brinde" id="brinde"></div>

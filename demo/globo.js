@@ -15,6 +15,11 @@ window.Globo = (function () {
   var canvas = null, ctx = null, raf = null;
   var rot = 0.6, alvo = null, larg = 300, alt = 300, dpr = 1;
 
+  // as cores do painel (painel.css): tinta, régua e óxido
+  var TINTA = "27,25,22";
+  var REGUA = "180,172,155";
+  var ACENTO = "156,58,26";
+
   function gerarPontos(n) {
     // espiral de Fibonacci: distribuição uniforme na esfera
     var pts = [], inc = Math.PI * (3 - Math.sqrt(5));
@@ -41,18 +46,18 @@ window.Globo = (function () {
 
     var cx = larg / 2, cy = alt / 2, raio = Math.min(larg, alt) * 0.40;
 
-    // halo
-    var halo = ctx.createRadialGradient(cx, cy, raio * 0.6, cx, cy, raio * 1.35);
-    halo.addColorStop(0, "rgba(59,130,246,.16)");
-    halo.addColorStop(0.6, "rgba(34,197,94,.06)");
-    halo.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = halo;
-    ctx.beginPath(); ctx.arc(cx, cy, raio * 1.35, 0, Math.PI * 2); ctx.fill();
-
-    // aro
-    ctx.strokeStyle = "rgba(96,165,250,.22)";
+    // Sem halo, sem brilho, sem desfoque: um halo luminoso atrás de uma esfera
+    // de pontos é a assinatura visual de um render de IA. Aqui desenha-se como
+    // se desenhava à mão — aro, equador e pontos de tinta.
     ctx.lineWidth = 1;
+    ctx.strokeStyle = "rgba(" + REGUA + ",.9)";
     ctx.beginPath(); ctx.arc(cx, cy, raio, 0, Math.PI * 2); ctx.stroke();
+
+    // equador: a única pista de que aquilo é uma esfera e não um disco
+    ctx.strokeStyle = "rgba(" + REGUA + ",.5)";
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, raio, raio * 0.30, 0, 0, Math.PI * 2);
+    ctx.stroke();
 
     // pontos da esfera
     for (var i = 0; i < PONTOS.length; i++) {
@@ -60,10 +65,10 @@ window.Globo = (function () {
       if (q[2] <= 0) continue;                       // meia esfera de trás
       var x = cx + q[0] * raio;
       var y = cy - q[1] * raio;
-      var a = 0.10 + q[2] * 0.55;                    // mais opaco à frente
+      var a = 0.06 + q[2] * 0.42;                    // mais opaco à frente
       ctx.beginPath();
-      ctx.arc(x, y, 0.9 + q[2] * 0.7, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(147,197,253," + a.toFixed(3) + ")";
+      ctx.arc(x, y, 0.7 + q[2] * 0.6, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(" + TINTA + "," + a.toFixed(3) + ")";
       ctx.fill();
     }
 
@@ -74,13 +79,12 @@ window.Globo = (function () {
       var pp = projetar(p3, rot);
       if (pp[2] > 0) {
         var px = cx + pp[0] * raio, py = cy - pp[1] * raio;
-        var g = ctx.createRadialGradient(px, py, 0, px, py, 16);
-        g.addColorStop(0, "rgba(52,211,153,.9)");
-        g.addColorStop(1, "rgba(52,211,153,0)");
-        ctx.fillStyle = g;
-        ctx.beginPath(); ctx.arc(px, py, 16, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(px, py, 3.2, 0, Math.PI * 2);
-        ctx.fillStyle = "#8fe3b0"; ctx.fill();
+        // um círculo fino e um ponto cheio: marca-se, não se ilumina
+        ctx.strokeStyle = "rgba(" + ACENTO + ",.38)";
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(px, py, 9, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(px, py, 2.6, 0, Math.PI * 2);
+        ctx.fillStyle = "rgb(" + ACENTO + ")"; ctx.fill();
       }
     }
   }
