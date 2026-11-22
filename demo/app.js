@@ -593,6 +593,10 @@
     $("#chave-input").value = Places.chave() || "";
     $("#chave-input").focus();
     window.scrollTo(0, 0);
+    if (Places.temChave()) {
+      $("#chave-google").querySelector("h3").textContent =
+        "Clave de Google Places guardada";
+    }
   });
 
   (function () {
@@ -602,9 +606,14 @@
       var v = ($("#chave-input").value || "").trim();
       if (v.length < 20) { brinde("Esa clave parece incompleta."); return; }
       Places.definirChave(v);
-      brinde("Clave guardada. Ya puedes buscar.");
       $("#chave-google").hidden = true;
-      if (area && (nicho || texto.length >= 3)) buscar();
+      if (area && (nicho || texto.length >= 3)) {
+        brinde("Clave guardada. Buscando…");
+        buscar();
+      } else {
+        brinde("Clave guardada. Ahora elige la zona.");
+        abrirModal(1);          // sem zona não há nada para buscar
+      }
     });
     if (Places.temChave()) $("#chave-google").hidden = true;
     $("#chave-input").value = Places.chave() || "";
