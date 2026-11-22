@@ -213,9 +213,16 @@ window.Preview = (function () {
 
   /* legenda: o rótulo do assunto e, quando ainda não há fotografia, o aviso
      discreto de que falta — uma vez por moldura, não repetido em cada bloco */
-  function legenda(rotulo, temFoto) {
+  /* Crédito do autor da fotografia. A Google Places devolve
+     `authorAttributions` e obriga a mostrá-lo; some quando não vem. */
+  function creditoDe(c, i) {
+    var quem = (c.creditos || [])[i];
+    return quem ? "<span class='credito'>Foto: " + esc(quem) + "</span>" : "";
+  }
+
+  function legenda(rotulo, temFoto, credito) {
     return "<span>" + esc(rotulo) + "</span>" +
-      (temFoto ? "" : "<span class='credito'>Fotografía pendiente</span>");
+      (temFoto ? (credito || "") : "<span class='credito'>Fotografía pendiente</span>");
   }
 
   /* o plano desenhado no lugar do mapa: ruas, quarteirões e um alfinete.
@@ -316,7 +323,16 @@ window.Preview = (function () {
       ? "https://wa.me/" + String(telefono).replace(/[^\d]/g, "")
       : "#donde");
     var horario = parseHorario(horarioTexto);
-    var fotos = Array.isArray(lead.fotos) ? lead.fotos.filter(Boolean) : [];
+    // fotos e créditos andam em paralelo: a Places exige que se mostre o autor
+    var fotos = [], creditos = [];
+    if (Array.isArray(lead.fotos)) {
+      var cred = Array.isArray(lead.fotoCreditos) ? lead.fotoCreditos : [];
+      lead.fotos.forEach(function (f, i) {
+        if (!f) return;
+        fotos.push(f);
+        creditos.push(cred[i] || "");
+      });
+    }
     var acento = opt.cor || (nicho.colores || {}).acento || "#8c2f39";
     var t = tokens(nicho, acento, escuro);
 
@@ -325,6 +341,7 @@ window.Preview = (function () {
       plantilla: plantilla, escuro: escuro, tok: t,
       et: et, ciudad: ciudad, direccion: direccion, telefono: telefono,
       telHref: telDigitos ? "tel:" + telDigitos : "#donde",
+      fotos: fotos, creditos: creditos, foto: fotos[0] || null,
       horario: horario, horarioTexto: horarioTexto,
       estado: estadoAberto(horario),
       hrefCta: hrefCta, cta: et.cta || "Contactar",
@@ -426,14 +443,14 @@ window.Preview = (function () {
       numero: "01", rotulo: "Interior",
       src: fotos[0] || null, alt: alt(c, "Interior"), eager: true,
       legenda: "<span>Interior del local" + (fotos[0] ? "" : " · falta la fotografía") + "</span>" +
-        "<span class='credito'>" + esc(c.ciudad) + "</span>"
+        (creditoDe(c, 0) || "<span class='credito'>" + esc(c.ciudad) + "</span>")
     });
 
     var casaSrc = fotos[1] || null;
     var casaFoto = foto({
       plantilla: "editorial", inicial: c.inicial, variante: 3, ratio: "45", rotulo: "El equipo",
       src: casaSrc, alt: alt(c, "El equipo"),
-      legenda: legenda("El equipo", !!casaSrc)
+      legenda: legenda("El equipo", !!casaSrc, creditoDe(c, 1))
     });
 
     var galeria = [0, 1, 2, 3].map(function (i) {
@@ -444,7 +461,7 @@ window.Preview = (function () {
         numero: "0" + (i + 1), rotulo: c.rotulos[i],
         src: src, alt: alt(c, c.rotulos[i]),
         legenda: "<span data-edit='gal" + (i + 1) + "'>" + esc(c.rotulos[i]) + "</span>" +
-          (src ? "" : "<span class='credito'>pendiente</span>")
+          (src ? creditoDe(c, 2 + i) : "<span class='credito'>pendiente</span>")
       });
     }).join("");
 
@@ -586,17 +603,18 @@ window.Preview = (function () {
     var portadaFoto = foto({
       plantilla: "confianza", inicial: c.inicial, variante: 1, rotulo: "El espacio",
       src: fotos[0] || null, alt: alt(c, "El espacio"), eager: true,
-      legenda: "<span>El espacio" + (fotos[0] ? "" : " · fotografía pendiente") + "</span>"
+      legenda: "<span>El espacio" + (fotos[0] ? "" : " · fotografía pendiente") + "</span>" +
+        creditoDe(c, 0)
     });
     var casaFoto = foto({
       plantilla: "confianza", inicial: c.inicial, variante: 2, ratio: "43", rotulo: "El equipo",
       src: fotos[1] || null, alt: alt(c, "El equipo"),
-      legenda: legenda("El equipo", !!fotos[1])
+      legenda: legenda("El equipo", !!fotos[1], creditoDe(c, 1))
     });
     var casaFoto2 = foto({
       plantilla: "confianza", inicial: c.inicial, variante: 4, ratio: "43", rotulo: "La consulta",
       src: fotos[2] || null, alt: alt(c, "La consulta"),
-      legenda: legenda("La consulta", !!fotos[2])
+      legenda: legenda("La consulta", !!fotos[2], creditoDe(c, 2))
     });
 
     var galeria = [0, 1, 2].map(function (i) {
@@ -606,7 +624,7 @@ window.Preview = (function () {
         rotulo: c.rotulos[i],
         src: src, alt: alt(c, c.rotulos[i]),
         legenda: "<span data-edit='gal" + (i + 1) + "'>" + esc(c.rotulos[i]) + "</span>" +
-          (src ? "" : "<span class='credito'>pendiente</span>")
+          (src ? creditoDe(c, 3 + i) : "<span class='credito'>pendiente</span>")
       });
     }).join("");
 
@@ -738,12 +756,13 @@ window.Preview = (function () {
 
     var portadaFoto = foto({
       plantilla: "oficio", inicial: c.inicial, variante: 1, rotulo: "El trabajo",
-      src: fotos[0] || null, alt: alt(c, "El trabajo"), eager: true
+      src: fotos[0] || null, alt: alt(c, "El trabajo"), eager: true,
+      legenda: creditoDe(c, 0)
     });
     var casaFoto = foto({
       plantilla: "oficio", inicial: c.inicial, variante: 2, ratio: "45", rotulo: "El equipo",
       src: fotos[1] || null, alt: alt(c, "El equipo"),
-      legenda: legenda("El equipo", !!fotos[1])
+      legenda: legenda("El equipo", !!fotos[1], creditoDe(c, 1))
     });
     var galeria = [0, 1, 2, 3].map(function (i) {
       var src = fotos[2 + i] || null;
@@ -751,7 +770,8 @@ window.Preview = (function () {
         plantilla: "oficio", inicial: c.inicial, variante: (i % 4) + 1, ratio: "11",
         rotulo: c.rotulos[i],
         src: src, alt: alt(c, c.rotulos[i]),
-        legenda: "<span data-edit='gal" + (i + 1) + "'>" + esc(c.rotulos[i]) + "</span>"
+        legenda: "<span data-edit='gal" + (i + 1) + "'>" + esc(c.rotulos[i]) + "</span>" +
+          creditoDe(c, 2 + i)
       });
     }).join("");
 

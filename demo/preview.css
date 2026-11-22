@@ -65,7 +65,7 @@ p { margin: 0; }
 
 /* cinta da demo */
 .muestra-venda {
-  position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
+  position: fixed; bottom: 10px; right: 12px;
   background: #101318; color: #fff;
   font: 600 9.5px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: .15em;
   text-transform: uppercase; padding: 7px 12px; opacity: .9; border-radius: 1px;
